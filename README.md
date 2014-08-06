@@ -45,6 +45,8 @@ ESClient.using("http://localhost:9200"){ client =>
 }
 ```
 
+elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its document]( http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/) to know details, especially how to build query.
+
 ## Code Generator
 
 TODO
