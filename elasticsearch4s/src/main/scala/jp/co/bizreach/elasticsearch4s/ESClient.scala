@@ -7,6 +7,8 @@ import jp.co.bizreach.elasticsearch4s.ESClient.ESConfig
 import jp.co.bizreach.elasticsearch4s.ESClient.ESSearchResult
 import scala.Some
 import jp.co.bizreach.elasticsearch4s.ESClient.ESSearchResultItem
+import org.apache.http.impl.client.CloseableHttpClient
+import org.elasticsearch.client.support.AbstractClient
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -17,48 +19,36 @@ object ESClient {
 
   val logger = LoggerFactory.getLogger(classOf[ESClient])
 
-  /**
-   * Create a ESSearchHelper instance.
-   */
-  def apply(url: String): ESClient = {
-    var client: QueryBuilderClient = null
-    try {
-      client = new QueryBuilderClient()
-      new ESClient(client, url)
-    } catch {
-      case e: Exception => {
-        if (client != null) client.close()
-        throw e
-      }
-    }
-  }
+//  /**
+//   * Create a ESSearchHelper instance.
+//   */
+//  def apply(url: String): ESClient = new ESClient(new QueryBuilderClient(), HttpUtils.createHttpClient(), url)
 
   /**
    * This is the entry point of processing using ElasticSearch.
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
-  def withElasticSearch[T](url: String)(f: ESClient => T): T = {
-    val helper = ESClient(url)
+  def using[T](url: String)(f: ESClient => T): T = {
+    val client = new ESClient(new QueryBuilderClient(), HttpUtils.createHttpClient(), url)
     try {
-      f(helper)
+      f(client)
     } finally {
-      helper.release()
+      client.release()
     }
   }
 
   case class ESConfig(indexName: String, typeName: String)
   case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]])
   case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, String])
-
 }
 
-class ESClient(client: org.elasticsearch.client.support.AbstractClient, url: String) {
+class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url: String) {
 
   def insertJson(json: String)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"insertJson:\n${json}")
     logger.debug(s"insertRequest:\n${json}")
 
-    val resultJson = HttpUtils.post(s"${url}/${config.indexName}/${config.typeName}/", json)
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/", json)
     val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -71,7 +61,7 @@ class ESClient(client: org.elasticsearch.client.support.AbstractClient, url: Str
     logger.debug(s"updateJson:\n${json}")
     logger.debug(s"updateRequest:\n${json}")
 
-    val resultJson = HttpUtils.put(s"${url}/${config.indexName}/${config.typeName}/${id}", json)
+    val resultJson = HttpUtils.put(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}", json)
     val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -83,18 +73,18 @@ class ESClient(client: org.elasticsearch.client.support.AbstractClient, url: Str
   def delete(id: String)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"delete id:\n${id}")
 
-    val resultJson = HttpUtils.delete(s"${url}/${config.indexName}/${config.typeName}/${id}")
+    val resultJson = HttpUtils.delete(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}")
     val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
   def search(f: SearchRequestBuilder => Unit)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = client.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    val resultJson = HttpUtils.post(s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
     val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -134,6 +124,9 @@ class ESClient(client: org.elasticsearch.client.support.AbstractClient, url: Str
     }
   }
 
-  def release() = client.close()
+  def release() = {
+    queryClient.close()
+    httpClient.close()
+  }
 
 }
