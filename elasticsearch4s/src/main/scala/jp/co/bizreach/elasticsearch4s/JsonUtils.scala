@@ -41,7 +41,13 @@ private[elasticsearch4s] object JsonUtils {
       })
       .addDeserializer(classOf[LocalDateTime], new JsonDeserializer[LocalDateTime](){
         override def deserialize(parser: JsonParser, context: DeserializationContext): LocalDateTime = {
-          DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parseLocalDateTime(parser.getValueAsString)
+          try {
+            DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parseLocalDateTime(parser.getValueAsString)
+          } catch {
+            case e: IllegalArgumentException => { // TODO Why??
+              DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").parseLocalDateTime(parser.getValueAsString)
+            }
+          }
         }
       })
 
