@@ -16,30 +16,29 @@ You can access Elasticsearch via REST API as following:
 ```scala
 case class Tweet(name: String, message: String)
 
-import jp.co.bizreach.elasticsearch4s.ESClient
 import jp.co.bizreach.elasticsearch4s.ESClient._
 
 ESClient.using("http://localhost:9200"){ client =>
-  implicit val config = ESConfig("twitter", "tweet")
+  val config = ESConfig("twitter", "tweet")
   
   // Insert
-  client.insert(Tweet("takezoe", "Hello World!!"))
-  client.insertJson("""{name: "takezoe", message: "Hello World!!"}""")
+  client.insert(config, Tweet("takezoe", "Hello World!!"))
+  client.insertJson(config, """{name: "takezoe", message: "Hello World!!"}""")
   
   // Update
-  client.update("1", Tweet("takezoe", "Hello Scala!!"))
-  client.updateJson("1", """{name: "takezoe", message: "Hello World!!"}""")
+  client.update(config, "1", Tweet("takezoe", "Hello Scala!!"))
+  client.updateJson(config, "1", """{name: "takezoe", message: "Hello World!!"}""")
   
   // Delete
-  client.delete("1")
+  client.delete(config, "1")
   
   // Find one document
-  val tweet: Option[(String, Tweet)] = client.find(classOf[Tweet]){ seacher =>
+  val tweet: Option[(String, Tweet)] = client.find[Tweet](config){ seacher =>
     seacher.setQuery(QueryBuilders.termQuery("name", "takezoe"))
   }
   
   // Search documents
-  val list: List[ESSearchResult] = client.list(classOf[Tweet]){ seacher =>
+  val list: List[ESSearchResult] = client.list[Tweet](config){ seacher =>
     seacher.setQuery(QueryBuilders.termQuery("name", "takezoe"))
   }
 }
