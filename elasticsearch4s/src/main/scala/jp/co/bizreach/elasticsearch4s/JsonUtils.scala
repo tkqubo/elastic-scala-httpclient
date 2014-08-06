@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, Version}
 import java.util.Locale
 import org.joda.time.{LocalDateTime, LocalDate}
 import org.joda.time.format.DateTimeFormat
+import scala.reflect.ClassTag
 
 private[elasticsearch4s] object JsonUtils {
 
@@ -29,7 +30,7 @@ private[elasticsearch4s] object JsonUtils {
     mapper.writeValueAsString(doc)
   }
 
-  def deserialize[T](json: String, clazz: Class[T]): T = {
+  def deserialize[T](json: String)(implicit c: ClassTag[T]): T = {
     val mapper = new ObjectMapper()
     mapper.registerModule(DefaultScalaModule)
 
@@ -52,7 +53,7 @@ private[elasticsearch4s] object JsonUtils {
       })
 
     mapper.registerModule(testModule)
-    mapper.readValue(json, clazz)
+    mapper.readValue(json, c.runtimeClass).asInstanceOf[T]
   }
 
 }

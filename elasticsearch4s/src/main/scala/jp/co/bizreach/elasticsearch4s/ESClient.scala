@@ -3,17 +3,13 @@ package jp.co.bizreach.elasticsearch4s
 import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import org.slf4j.LoggerFactory
-import jp.co.bizreach.elasticsearch4s.ESClient.ESConfig
-import jp.co.bizreach.elasticsearch4s.ESClient.ESSearchResult
-import scala.Some
-import jp.co.bizreach.elasticsearch4s.ESClient.ESSearchResultItem
 import org.apache.http.impl.client.CloseableHttpClient
 import org.elasticsearch.client.support.AbstractClient
+import org.elasticsearch.index.query.{QueryBuilders, QueryBuilder}
+import scala.reflect.ClassTag
 
 /**
  * Helper for accessing to Elasticsearch.
- *
- * Created by nishiyama on 2014/04/25.
  */
 object ESClient {
 
@@ -36,75 +32,76 @@ object ESClient {
       client.release()
     }
   }
-
-  case class ESConfig(indexName: String, typeName: String)
-  case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]])
-  case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, String])
 }
+
+case class ESConfig(indexName: String, typeName: String)
+case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]])
+case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, String])
 
 class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url: String) {
 
-  def insertJson(json: String)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
+  def insertJson(config: ESConfig, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"insertJson:\n${json}")
     logger.debug(s"insertRequest:\n${json}")
 
     val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/", json)
-    val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def insert(entity: AnyRef)(implicit config: ESConfig):  Either[Map[String, Any], Map[String, Any]] = {
-    insertJson(JsonUtils.serialize(entity))
+  def insert(config: ESConfig, entity: AnyRef):  Either[Map[String, Any], Map[String, Any]] = {
+    insertJson(config, JsonUtils.serialize(entity))
   }
 
-  def updateJson(id: String, json: String)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
+  def updateJson(config: ESConfig, id: String, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"updateJson:\n${json}")
     logger.debug(s"updateRequest:\n${json}")
 
     val resultJson = HttpUtils.put(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}", json)
-    val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def update(id: String, entity: AnyRef)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
-    updateJson(id, JsonUtils.serialize(entity))
+  def update(config: ESConfig, id: String, entity: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
+    updateJson(config, id, JsonUtils.serialize(entity))
   }
 
-  def delete(id: String)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
+  def delete(config: ESConfig, id: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"delete id:\n${id}")
 
     val resultJson = HttpUtils.delete(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}")
-    val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def search(f: SearchRequestBuilder => Unit)(implicit config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
+  def search(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
     val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
-    val map = JsonUtils.deserialize(resultJson, classOf[Map[String, Any]])
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def find[T](clazz: Class[T])(f: SearchRequestBuilder => Unit)(implicit config: ESConfig): Option[(String, T)] = {
-    search(f) match {
+  def find[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): Option[(String, T)] = {
+    search(config)(f) match {
       case Left(x)  => throw new RuntimeException(x("error").toString)
       case Right(x) => {
         val hits = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
         if(hits.length == 0){
           None
         } else {
-          Some((hits.head("_id").toString, JsonUtils.deserialize(JsonUtils.serialize(hits.head("_source").asInstanceOf[Map[String, Any]]), clazz)))
+          Some((hits.head("_id").toString, JsonUtils.deserialize[T](JsonUtils.serialize(hits.head("_source").asInstanceOf[Map[String, Any]]))))
         }
       }
     }
   }
 
-  def list[T](clazz: Class[T])(f: SearchRequestBuilder => Unit)(implicit config: ESConfig): ESSearchResult[T] = {
-    search(f) match {
+  def list[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): ESSearchResult[T] = {
+    search(config)(f) match {
       case Left(x)  => throw new RuntimeException(x("error").toString)
       case Right(x) => {
         val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
@@ -114,7 +111,7 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
           total,
           hits.map { hit =>
             ESSearchResultItem(hit("_id").toString,
-              JsonUtils.deserialize(JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]]), clazz),
+              JsonUtils.deserialize[T](JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]])),
               hit.get("highlight").asInstanceOf[Option[Map[String, String]]].getOrElse(Map.empty[String, String])
             )
           }.toList,
