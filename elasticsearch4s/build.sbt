@@ -2,18 +2,17 @@ name := "elasticsearch4s"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.1"
+version := "0.0.2"
 
 scalaVersion := "2.11.2"
 
 libraryDependencies ++= Seq(
-  "org.elasticsearch"            % "elasticsearch"          % "1.1.0",
-  "org.slf4j"                    % "slf4j-api"              % "1.7.7",
-  "joda-time"                    % "joda-time"              % "2.2",
-  "org.joda"                     % "joda-convert"           % "1.6",
+  "org.elasticsearch"            %  "elasticsearch"         % "1.1.0",
+  "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
+  "joda-time"                    %  "joda-time"             % "2.2",
+  "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
-  "org.apache.httpcomponents"    % "httpclient"             % "4.3.4",
-  //"org.json4s"        %% "json4s-jackson" % "3.2.10",
+  "org.apache.httpcomponents"    %  "httpclient"            % "4.3.4",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.4.1"
 )
 
@@ -26,6 +25,8 @@ publishTo <<= version { (v: String) =>
 }
 
 scalacOptions := Seq("-deprecation")
+
+javacOptions in compile ++= Seq("-target","1.7", "-encoding","UTF-8")
 
 publishArtifact in Test := false
 
