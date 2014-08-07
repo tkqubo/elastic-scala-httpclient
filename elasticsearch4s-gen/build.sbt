@@ -1,10 +1,12 @@
+sbtPlugin := true
+
 name := "elasticsearch4s-gen"
 
 organization := "jp.co.bizreach"
 
 version := "0.0.1"
 
-scalaVersion := "2.11.2"
+scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
   "commons-io" %  "commons-io"     % "2.4",
@@ -20,6 +22,8 @@ publishTo <<= version { (v: String) =>
 }
 
 scalacOptions := Seq("-deprecation")
+
+javacOptions in compile ++= Seq("-source","1.7", "-target","1.7", "-encoding","UTF-8")
 
 publishArtifact in Test := false
 
