@@ -48,4 +48,14 @@ elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its docum
 
 ## Code Generator
 
-TODO
+elasticsearch4s-gen can generate source code from Elasticsearch schema json file.
+
+At first, add following setting into `project/plugins.sbt`:
+
+```scala
+addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.1")
+```
+
+Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
+
+You can configure generation settings in `PROJECT_ROOT/es-gen.conf`.
