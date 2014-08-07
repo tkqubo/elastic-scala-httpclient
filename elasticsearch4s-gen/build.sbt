@@ -31,7 +31,7 @@ publishArtifact in Test := false
 pomIncludeRepository := { _ => false }
 
 pomExtra := (
-  <url>https://github.com/bizreach/elasticsearch4s-gen</url>
+  <url>https://github.com/bizreach/elasticsearch4s</url>
     <licenses>
       <license>
         <name>The Apache Software License, Version 2.0</name>
@@ -40,7 +40,7 @@ pomExtra := (
     </licenses>
     <scm>
       <url>https://github.com/bizreach/elasticsearch4s-gen</url>
-      <connection>scm:git:https://github.com/bizreach/elasticsearch4s-gen.git</connection>
+      <connection>scm:git:https://github.com/bizreach/elasticsearch4s.git</connection>
     </scm>
     <developers>
       <developer>
