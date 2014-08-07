@@ -18,6 +18,7 @@ object ESCodegen extends AutoPlugin {
 
   private def generate: Def.Initialize[Task[Unit]] = Def.task {
     //core.CustomizedCodeGenerator.generate
+
   }
 
 }

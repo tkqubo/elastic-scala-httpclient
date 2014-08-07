@@ -9,8 +9,9 @@ version := "0.0.1"
 scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
-  "commons-io" %  "commons-io"     % "2.4",
-  "org.json4s" %% "json4s-jackson" % "3.2.10"
+  "com.typesafe" %  "config"         % "1.2.1",
+  "commons-io"   %  "commons-io"     % "2.4",
+  "org.json4s"   %% "json4s-jackson" % "3.2.10"
 )
 
 publishMavenStyle := true

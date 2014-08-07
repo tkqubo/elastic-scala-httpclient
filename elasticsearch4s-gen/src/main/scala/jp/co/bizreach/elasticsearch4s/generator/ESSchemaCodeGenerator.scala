@@ -9,14 +9,10 @@ object ESSchemaCodeGenerator {
 
   implicit val jsonFormats = DefaultFormats
 
-  val outputDir = "../stanby-scala-common/src/main/scala"
-  val packageName = "models"
-  val jsonFiles = Seq("job.json", "company.json")
-  val arrayProperty = Map("Job" -> List("employmentStatus"))
-
   @SuppressWarnings(Array("unchecked"))
-  def main(args: Array[String]): Unit = {
-    jsonFiles.foreach { fileName =>
+  def generate(): Unit = {
+    val config = ESCodegenConfig.load()
+    config.jsonFiles.foreach { fileName =>
       val json = parse(read(fileName))
 
       (json \\ "mappings") match {
@@ -24,14 +20,14 @@ object ESSchemaCodeGenerator {
           mappings.values.foreach { case schemas: Map[String, _] @unchecked =>
             val schemaInfoList = schemas.map { case (key: String, value: Map[String, _] @unchecked) =>
               val props = value("properties").asInstanceOf[Map[String, _]]
-              extractClassInfo(toUpperCamel(key), props)
+              extractClassInfo(config, toUpperCamel(key), props)
             }
 
             schemaInfoList.foreach { classInfoList =>
               val sb = new StringBuilder()
               val head = classInfoList.head
               val tail = classInfoList.tail
-              sb.append(s"package ${packageName}\n")
+              sb.append(s"package ${config.packageName}\n")
               sb.append(s"import ${head.name}._\n")
               sb.append("\n")
               sb.append(generateSource(head))
@@ -50,7 +46,7 @@ object ESSchemaCodeGenerator {
               sb.append("\n")
               sb.append("}")
 
-              val file = new java.io.File(s"${outputDir}/${packageName.replace('.', '/')}/${head.name}.scala")
+              val file = new java.io.File(s"${config.outputDir}/${config.packageName.replace('.', '/')}/${head.name}.scala")
               FileUtils.write(file, sb.toString, "UTF-8")
             }
           }
@@ -90,10 +86,10 @@ object ESSchemaCodeGenerator {
   // とりあえず先頭が数値ではじまっているかどうかのみチェック
   private def isValidIdentifier(name: String): Boolean = !name.matches("^[0-9].*")
 
-  private def extractClassInfo(name: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
-    ClassInfo(name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
+  private def extractClassInfo(config: ESCodegenConfig, name: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
+    ClassInfo(config, name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
       if(value.contains("properties")){
-        Some(extractClassInfo(toUpperCamel(key), value("properties").asInstanceOf[Map[String, _]]))
+        Some(extractClassInfo(config, toUpperCamel(key), value("properties").asInstanceOf[Map[String, _]]))
       } else {
         None
       }
@@ -122,7 +118,7 @@ object ESSchemaCodeGenerator {
   case class ClassInfo(name: String, props: List[PropInfo])
 
   object ClassInfo {
-    def apply(name: String, props: Map[String, _]): ClassInfo = {
+    def apply(config: ESCodegenConfig, name: String, props: Map[String, _]): ClassInfo = {
       ClassInfo(
         name,
         props.map { case (key: String, value: Map[String, _] @unchecked) => {
@@ -139,7 +135,7 @@ object ESSchemaCodeGenerator {
             toUpperCamel(key)
           }
           // 配列の場合はArrayで包む
-          val arrayType = if(arrayProperty.get(name).exists(_.contains(key))){
+          val arrayType = if(config.arrayProperties.get(name).exists(_.contains(key))){
             s"Array[${typeName}]"
           } else {
             typeName
