@@ -1,6 +1,7 @@
 package jp.co.bizreach.elasticsearch4s.generator
 
 import org.apache.commons.io.{FileUtils, IOUtils}
+import java.io.FileInputStream
 
 object ESSchemaCodeGenerator {
 
@@ -16,42 +17,40 @@ object ESSchemaCodeGenerator {
       val json = parse(read(fileName))
 
       (json \\ "mappings") match {
-        case mappings: JArray => {
-          mappings.values.foreach { case schemas: Map[String, _] @unchecked =>
-            val schemaInfoList = schemas.map { case (key: String, value: Map[String, _] @unchecked) =>
-              val props = value("properties").asInstanceOf[Map[String, _]]
-              extractClassInfo(config, toUpperCamel(key), props)
-            }
+        case mappings: JObject => {
+          val schemaInfoList = mappings.values.map { case (key: String, value: Map[String, _] @unchecked) =>
+            val props = value("properties").asInstanceOf[Map[String, _]]
+            extractClassInfo(config, toUpperCamel(key), props)
+          }
 
-            schemaInfoList.foreach { classInfoList =>
-              val sb = new StringBuilder()
-              val head = classInfoList.head
-              val tail = classInfoList.tail
-              sb.append(s"package ${config.packageName}\n")
-              sb.append(s"import ${head.name}._\n")
-              sb.append("\n")
-              sb.append(generateSource(head))
-              sb.append("\n")
-              sb.append(s"object ${head.name} {\n")
-              sb.append("\n")
-              sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
-              sb.append("\n")
-              tail.foreach { classInfo =>
-                sb.append("  " + generateSource(classInfo))
-              }
-              sb.append("\n")
-              head.props.foreach { prop =>
-                sb.append(generateNames("  ", "", prop, tail))
-              }
-              sb.append("\n")
-              sb.append("}")
-
-              val file = new java.io.File(s"${config.outputDir}/${config.packageName.replace('.', '/')}/${head.name}.scala")
-              FileUtils.write(file, sb.toString, "UTF-8")
+          schemaInfoList.foreach { classInfoList =>
+            val sb = new StringBuilder()
+            val head = classInfoList.head
+            val tail = classInfoList.tail
+            sb.append(s"package ${config.packageName}\n")
+            sb.append(s"import ${head.name}._\n")
+            sb.append("\n")
+            sb.append(generateSource(head))
+            sb.append("\n")
+            sb.append(s"object ${head.name} {\n")
+            sb.append("\n")
+            sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
+            sb.append("\n")
+            tail.foreach { classInfo =>
+              sb.append("  " + generateSource(classInfo))
             }
+            sb.append("\n")
+            head.props.foreach { prop =>
+              sb.append(generateNames("  ", "", prop, tail))
+            }
+            sb.append("\n")
+            sb.append("}")
+
+            val file = new java.io.File(s"${config.outputDir}/${config.packageName.replace('.', '/')}/${head.name}.scala")
+            FileUtils.write(file, sb.toString, "UTF-8")
           }
         }
-        case _ =>
+        case  _ =>
       }
     }
   }
@@ -80,10 +79,8 @@ object ESSchemaCodeGenerator {
     sb.toString
   }
 
-  // クラスパスからファイルを読み込む
-  private def read(path: String): String = IOUtils.toString(Thread.currentThread.getContextClassLoader.getResourceAsStream(path))
+  private def read(path: String): String = IOUtils.toString(new FileInputStream(path))
 
-  // とりあえず先頭が数値ではじまっているかどうかのみチェック
   private def isValidIdentifier(name: String): Boolean = !name.matches("^[0-9].*")
 
   private def extractClassInfo(config: ESCodegenConfig, name: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
@@ -122,7 +119,7 @@ object ESSchemaCodeGenerator {
       ClassInfo(
         name,
         props.map { case (key: String, value: Map[String, _] @unchecked) => {
-          // 型の名前を取得
+
           val typeName = if(value.contains("type")){
             value("type").toString match {
               case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.LocalDateTime"
@@ -134,13 +131,13 @@ object ESSchemaCodeGenerator {
           } else {
             toUpperCamel(key)
           }
-          // 配列の場合はArrayで包む
+
           val arrayType = if(config.arrayProperties.get(name).exists(_.contains(key))){
             s"Array[${typeName}]"
           } else {
             typeName
           }
-          // null可の場合はOptionで包む
+
           val optionType = if(value.get("null_value") == Some("na")){
             arrayType
           } else {

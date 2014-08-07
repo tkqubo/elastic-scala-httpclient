@@ -15,15 +15,15 @@ object ESCodegenConfig {
   def load(): ESCodegenConfig = {
     val config = ConfigFactory.parseFileAnySyntax(Paths.get("es-gen.conf").toFile)
     ESCodegenConfig(
-      outputDir       = config.getString("es-gen.output.dir"),
-      packageName     = config.getString("es-gen.package.name"),
-      jsonFiles       = config.getStringList("es-gen.json.files").asScala.toSeq,
-      arrayProperties = config.getStringList("es-gen.array.properties").asScala.map { x =>
+      outputDir       = if(config.hasPath("es-gen.output.dir")) config.getString("es-gen.output.dir") else "src/main/scala",
+      packageName     = if(config.hasPath("es-gen.package.name")) config.getString("es-gen.package.name") else "models",
+      jsonFiles       = if(config.hasPath("es-gen.json.files")) config.getStringList("es-gen.json.files").asScala.toSeq else Seq("schema.json"),
+      arrayProperties = if(config.hasPath("es-gen.array.properties")) config.getStringList("es-gen.array.properties").asScala.map { x =>
         val array = x.split(":")
         val key   = array(0).trim
         val value = array(1).trim
         key -> value.split(",").map(_.trim).toSeq
-      }.toMap
+      }.toMap else Map.empty[String, Seq[String]]
     )
   }
 }
