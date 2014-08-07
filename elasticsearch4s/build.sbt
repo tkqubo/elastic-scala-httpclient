@@ -26,7 +26,7 @@ publishTo <<= version { (v: String) =>
 
 scalacOptions := Seq("-deprecation")
 
-javacOptions in compile ++= Seq("-target","1.7", "-encoding","UTF-8")
+javacOptions in compile ++= Seq("-source","1.7", "-target","1.7", "-encoding","UTF-8")
 
 publishArtifact in Test := false
 
