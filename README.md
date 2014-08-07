@@ -34,7 +34,7 @@ ESClient.using("http://localhost:9200"){ client =>
   
   // Find one document
   val tweet: Option[(String, Tweet)] = client.find[Tweet](config){ seacher =>
-    seacher.setQuery(QueryBuilders.termQuery("name", "takezoe"))
+    seacher.setQuery(QueryBuilders.termQuery("_id", "1"))
   }
   
   // Search documents
