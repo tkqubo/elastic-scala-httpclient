@@ -58,4 +58,4 @@ addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.1")
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
 
-You can configure generation settings in `PROJECT_ROOT/es-gen.conf`.
+You can configure generation settings in `PROJECT_ROOT/es-gen.conf`. See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elasticsearch4s-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
