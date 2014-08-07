@@ -1,0 +1,26 @@
+package models
+import Person._
+
+case class Person(name1: Option[Name1], name2: Option[Name2])
+
+object Person {
+
+  val typeName = "person"
+
+  case class Name1(first1: Option[String], last1: Option[String])
+  case class Name2(first2: Option[String], last2: Option[String])
+
+  val name1 = Name1Names
+  object Name1Names {
+    val first1 = "name1.first1"
+    val last1 = "name1.last1"
+    override def toString() = "name1"
+  }
+  val name2 = Name2Names
+  object Name2Names {
+    val first2 = "name2.first2"
+    val last2 = "name2.last2"
+    override def toString() = "name2"
+  }
+
+}

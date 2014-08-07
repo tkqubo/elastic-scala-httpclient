@@ -4,9 +4,7 @@ name := "elasticsearch4s-gen"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.2"
-
-scalaVersion := "2.10.3"
+version := "0.0.3-SNAPSHOT"
 
 libraryDependencies ++= Seq(
   "com.typesafe" %  "config"         % "1.2.1",
