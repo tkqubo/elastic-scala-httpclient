@@ -16,7 +16,7 @@ You can access Elasticsearch via REST API as following:
 ```scala
 case class Tweet(name: String, message: String)
 
-import jp.co.bizreach.elasticsearch4s.ESClient._
+import jp.co.bizreach.elasticsearch4s._
 
 ESClient.using("http://localhost:9200"){ client =>
   val config = ESConfig("twitter", "tweet")
