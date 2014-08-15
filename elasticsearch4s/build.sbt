@@ -2,7 +2,7 @@ name := "elasticsearch4s"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.2"
+version := "0.0.3"
 
 scalaVersion := "2.11.2"
 

@@ -74,6 +74,25 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
+  def count(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
+    f(searcher)
+    logger.debug(s"countRequest:${searcher.toString}")
+
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_count", searcher.toString)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
+  def countAsInt(config: ESConfig)(f: SearchRequestBuilder => Unit): Int = {
+    count(config)(f) match {
+      case Left(x)  => throw new RuntimeException(x("error").toString)
+      case Right(x) => x("count").asInstanceOf[Int]
+    }
+  }
+
   def search(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
