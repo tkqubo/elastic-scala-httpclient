@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, Version}
 import java.util.Locale
-import org.joda.time.{LocalDateTime, LocalDate}
+import org.joda.time.{DateTime, LocalDate}
 import org.joda.time.format.DateTimeFormat
 import scala.reflect.ClassTag
 
@@ -20,9 +20,10 @@ private[elasticsearch4s] object JsonUtils {
           generator.writeString(value.toString("yyyy/MM/dd", Locale.ENGLISH))
         }
       })
-      .addSerializer(classOf[LocalDateTime], new JsonSerializer[LocalDateTime] {
-        override def serialize(value: LocalDateTime, generator: JsonGenerator, provider: SerializerProvider): Unit = {
-          generator.writeString(value.toString("yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH))
+      .addSerializer(classOf[DateTime], new JsonSerializer[DateTime] {
+        override def serialize(value: DateTime, generator: JsonGenerator, provider: SerializerProvider): Unit = {
+          val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC()
+          generator.writeString(formatter.print(value))
         }
       })
 
@@ -40,15 +41,10 @@ private[elasticsearch4s] object JsonUtils {
           DateTimeFormat.forPattern("yyyy/MM/dd").parseLocalDate(parser.getValueAsString)
         }
       })
-      .addDeserializer(classOf[LocalDateTime], new JsonDeserializer[LocalDateTime](){
-        override def deserialize(parser: JsonParser, context: DeserializationContext): LocalDateTime = {
-          try {
-            DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSSZ").parseLocalDateTime(parser.getValueAsString)
-          } catch {
-            case e: IllegalArgumentException => { // TODO Why??
-              DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS").parseLocalDateTime(parser.getValueAsString)
-            }
-          }
+      .addDeserializer(classOf[DateTime], new JsonDeserializer[DateTime](){
+        override def deserialize(parser: JsonParser, context: DeserializationContext): DateTime = {
+          val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC()
+          formatter.parseDateTime(parser.getValueAsString)
         }
       })
 

@@ -122,7 +122,7 @@ object ESSchemaCodeGenerator {
 
           val typeName = if(value.contains("type")){
             value("type").toString match {
-              case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.LocalDateTime"
+              case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
               case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
               case "long"   => "Long"
               case "string" => "String"
