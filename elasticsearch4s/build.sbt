@@ -13,7 +13,8 @@ libraryDependencies ++= Seq(
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
   "org.apache.httpcomponents"    %  "httpclient"            % "4.3.4",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.4.1"
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.4.1",
+  "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 )
 
 publishMavenStyle := true
