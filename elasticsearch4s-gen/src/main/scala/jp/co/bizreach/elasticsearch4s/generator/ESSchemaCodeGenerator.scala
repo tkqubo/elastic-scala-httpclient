@@ -1,7 +1,7 @@
 package jp.co.bizreach.elasticsearch4s.generator
 
 import org.apache.commons.io.{FileUtils, IOUtils}
-import java.io.FileInputStream
+import java.io.{File, FileInputStream}
 
 object ESSchemaCodeGenerator {
 
@@ -14,19 +14,21 @@ object ESSchemaCodeGenerator {
   def generate(): Unit = {
     val config = ESCodegenConfig.load()
     config.jsonFiles.foreach { fileName =>
-      val json = parse(read(fileName))
+      val file = new File(fileName)
+      val json = parse(read(file))
 
       (json \\ "mappings") match {
         case mappings: JObject => {
           val schemaInfoList = mappings.values.map { case (key: String, value: Map[String, _] @unchecked) =>
             val props = value("properties").asInstanceOf[Map[String, _]]
-            extractClassInfo(config, toUpperCamel(key), props)
+            extractClassInfo(file, config, key, props)
           }
 
           schemaInfoList.foreach { classInfoList =>
             val sb = new StringBuilder()
             val head = classInfoList.head
             val tail = classInfoList.tail
+            val name = config.classMappings.get(head.name)
             sb.append(s"package ${config.packageName}\n")
             sb.append(s"import ${head.name}._\n")
             sb.append("\n")
@@ -79,14 +81,16 @@ object ESSchemaCodeGenerator {
     sb.toString
   }
 
-  private def read(path: String): String = IOUtils.toString(new FileInputStream(path), "UTF-8")
+  private def read(file: File): String = IOUtils.toString(new FileInputStream(file), "UTF-8")
 
   private def isValidIdentifier(name: String): Boolean = !name.matches("^[0-9].*")
 
-  private def extractClassInfo(config: ESCodegenConfig, name: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
-    ClassInfo(config, name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
+  private def extractClassInfo(file: File, config: ESCodegenConfig, key: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
+    val name = config.classMappings.get(key).orElse(config.classMappings.get(file.getName + "#" + key)).getOrElse(toUpperCamel(key))
+
+    ClassInfo(file, config, name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
       if(value.contains("properties")){
-        Some(extractClassInfo(config, toUpperCamel(key), value("properties").asInstanceOf[Map[String, _]]))
+        Some(extractClassInfo(file, config, key, value("properties").asInstanceOf[Map[String, _]]))
       } else {
         None
       }
@@ -115,7 +119,7 @@ object ESSchemaCodeGenerator {
   case class ClassInfo(name: String, props: List[PropInfo])
 
   object ClassInfo {
-    def apply(config: ESCodegenConfig, name: String, props: Map[String, _]): ClassInfo = {
+    def apply(file: File, config: ESCodegenConfig, name: String, props: Map[String, _]): ClassInfo = {
       ClassInfo(
         name,
         props.map { case (key: String, value: Map[String, _] @unchecked) => {
@@ -132,7 +136,8 @@ object ESSchemaCodeGenerator {
             toUpperCamel(key)
           }
 
-          val arrayType = if(config.arrayProperties.get(name).exists(_.contains(key))){
+          val arrayType = if(config.arrayProperties.get(name).orElse(
+            config.arrayProperties.get(file.getName + "#" + name)).exists(_.contains(key))){
             s"Array[${typeName}]"
           } else {
             typeName
