@@ -79,7 +79,7 @@ object ESSchemaCodeGenerator {
     sb.toString
   }
 
-  private def read(path: String): String = IOUtils.toString(new FileInputStream(path))
+  private def read(path: String): String = IOUtils.toString(new FileInputStream(path), "UTF-8")
 
   private def isValidIdentifier(name: String): Boolean = !name.matches("^[0-9].*")
 
