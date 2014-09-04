@@ -6,6 +6,8 @@ version := "0.0.5-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
+crossScalaVersions := Seq("2.10.4", "2.11.2")
+
 libraryDependencies ++= Seq(
   "org.elasticsearch"            %  "elasticsearch"         % "1.1.0",
   "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
