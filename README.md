@@ -1,4 +1,4 @@
-elasticsearch4s
+elasticsearch4s   [![Build Status](https://secure.travis-ci.org/bizreach/elasticsearch4s.png?branch=master)](http://travis-ci.org/bizreach/elasticsearch4s)
 ===============
 
 Scala client and code generator for Elasticsearch

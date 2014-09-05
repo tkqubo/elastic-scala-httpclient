@@ -1,0 +1,3 @@
+> esGen
+$ must-mirror expected.txt src/main/scala/models/Person.scala
+> compile
