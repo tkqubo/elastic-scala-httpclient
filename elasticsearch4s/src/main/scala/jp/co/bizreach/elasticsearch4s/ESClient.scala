@@ -140,6 +140,12 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     }
   }
 
+  def refresh(config: ESConfig)(): Either[Map[String, Any], Map[String, Any]] = {
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/_refresh", "")
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
   def release() = {
     queryClient.close()
     httpClient.close()
