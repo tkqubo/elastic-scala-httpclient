@@ -35,7 +35,9 @@ object ESClient {
 }
 
 case class ESConfig(indexName: String, typeName: String)
-case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]])
+case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]],
+  aggregations: Map[String, Any], source: Map[String, Any]
+)
 case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, List[String]])
 
 class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url: String) {
@@ -134,7 +136,9 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
               hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
             )
           }.toList,
-          x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty)
+          x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty),
+          x.get("aggregations").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty),
+          x
         )
       }
     }
