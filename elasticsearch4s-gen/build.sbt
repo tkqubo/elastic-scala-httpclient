@@ -4,7 +4,7 @@ name := "elasticsearch4s-gen"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.3-SNAPSHOT"
+version := "0.0.3"
 
 scalaVersion := "2.10.3"
 
