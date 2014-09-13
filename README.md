@@ -8,7 +8,7 @@ Scala client and code generator for Elasticsearch
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elasticsearch4s" % "0.0.4"
+libraryDependencies += "jp.co.bizreach" %% "elasticsearch4s" % "0.0.5"
 ```
 
 You can access Elasticsearch via REST API as following:
@@ -53,7 +53,7 @@ elasticsearch4s-gen can generate source code from Elasticsearch schema json file
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.2")
+addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.3")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
