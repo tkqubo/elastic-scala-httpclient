@@ -98,7 +98,6 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
   def search(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
-    searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
