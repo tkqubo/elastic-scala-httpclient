@@ -130,7 +130,7 @@ object ESSchemaCodeGenerator {
               case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
               case "long"   => "Long"
               case "string" => "String"
-              case x        => x
+              case x        => config.typeMappings.getOrElse(x, x)
             }
           } else {
             toUpperCamel(key)
