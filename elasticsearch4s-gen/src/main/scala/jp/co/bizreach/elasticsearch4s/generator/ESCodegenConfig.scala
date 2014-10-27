@@ -5,6 +5,7 @@ case class ESCodegenConfig(
   packageName: String = "models",
   jsonFiles: Seq[String] = Seq("schema.json"),
   classMappings: Map[String, String] = Map.empty,
+  typeMappings: Map[String, String] = Map.empty,
   arrayProperties: Map[String, Seq[String]] = Map.empty
 )
 
@@ -20,6 +21,12 @@ object ESCodegenConfig {
       packageName     = if(config.hasPath("es-gen.package.name")) config.getString("es-gen.package.name") else "models",
       jsonFiles       = if(config.hasPath("es-gen.json.files")) config.getStringList("es-gen.json.files").asScala.toSeq else Seq("schema.json"),
       classMappings   = if(config.hasPath("es-gen.class.mappings")) config.getStringList("es-gen.class.mappings").asScala.map { x =>
+        val array = x.split(":")
+        val key   = array(0).trim
+        val value = array(1).trim
+        key -> value
+      }.toMap else Map.empty,
+      typeMappings   = if(config.hasPath("es-gen.type.mappings")) config.getStringList("es-gen.type.mappings").asScala.map { x =>
         val array = x.split(":")
         val key   = array(0).trim
         val value = array(1).trim
