@@ -2,22 +2,22 @@ name := "elasticsearch4s"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.6"
+version := "0.0.6-SNAPSHOT"
 
 scalaVersion := "2.11.2"
 
 crossScalaVersions := Seq("2.10.4", "2.11.2")
 
-libraryDependencies ++= Seq(
+libraryDependencies <++= scalaVersion(sv => Seq(
   "org.elasticsearch"            %  "elasticsearch"         % "1.1.0",
   "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
   "joda-time"                    %  "joda-time"             % "2.2",
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
   "org.apache.httpcomponents"    %  "httpclient"            % "4.3.4",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.4.1",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % (if(sv.startsWith("2.10")) "2.3.3" else "2.4.1"),
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
-)
+))
 
 publishMavenStyle := true
 
