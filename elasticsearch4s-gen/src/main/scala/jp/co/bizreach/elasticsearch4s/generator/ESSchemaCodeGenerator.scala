@@ -32,14 +32,14 @@ object ESSchemaCodeGenerator {
             sb.append(s"package ${config.packageName}\n")
             sb.append(s"import ${head.name}._\n")
             sb.append("\n")
-            sb.append(generateSource(head))
+            sb.append(generateSource("", head))
             sb.append("\n")
             sb.append(s"object ${head.name} {\n")
             sb.append("\n")
             sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
             sb.append("\n")
             tail.foreach { classInfo =>
-              sb.append("  " + generateSource(classInfo))
+              sb.append(generateSource("  ", classInfo))
             }
             sb.append("\n")
             head.props.foreach { prop =>
@@ -97,22 +97,20 @@ object ESSchemaCodeGenerator {
     }.flatten.toList
   }
 
-  private def generateSource(classInfo: ClassInfo): String = {
+  private def generateSource(indent: String, classInfo: ClassInfo): String = {
     val sb = new StringBuilder()
     if(classInfo.props.length > 22){
-      sb.append("@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)\n")
-      sb.append(s"class ${classInfo.name}(\n")
+      sb.append(indent + s"class ${classInfo.name}(\n")
       sb.append(classInfo.props.map { propInfo =>
-        s"  val ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
-      }.mkString(", \n"))
-      sb.append("\n)\n")
+        indent + s"  val ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
+      }.mkString("", ", \n", "\n"))
+      sb.append(indent + ")\n")
     } else {
-      sb.append("@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)\n")
-      sb.append(s"case class ${classInfo.name}(\n")
+      sb.append(indent + s"case class ${classInfo.name}(\n")
       sb.append(classInfo.props.map { propInfo =>
-        s"  ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
-      }.mkString(", \n"))
-      sb.append("\n)\n")
+         indent+ s"  ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
+      }.mkString("", ", \n", "\n"))
+      sb.append(indent + ")\n")
     }
     sb.toString
   }
