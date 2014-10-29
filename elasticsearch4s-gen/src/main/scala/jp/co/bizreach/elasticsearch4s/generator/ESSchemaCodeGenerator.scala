@@ -122,34 +122,38 @@ object ESSchemaCodeGenerator {
     def apply(file: File, config: ESCodegenConfig, name: String, props: Map[String, _]): ClassInfo = {
       ClassInfo(
         name,
-        props.map { case (key: String, value: Map[String, _] @unchecked) => {
-
-          val typeName = if(value.contains("type")){
-            value("type").toString match {
-              case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
-              case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
-              case "long"   => "Long"
-              case "string" => "String"
-              case x        => config.typeMappings.getOrElse(x, x)
+        props
+          .filter { case (key: String, value: Map[String, _] @unchecked) =>
+            !config.ignoreProperties.contains(key) && !config.ignoreProperties.contains(file.getName + "#" + key)
+          }
+          .map { case (key: String, value: Map[String, _] @unchecked) => {
+            val typeName = if(value.contains("type")){
+              value("type").toString match {
+                case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
+                case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
+                case "long"   => "Long"
+                case "string" => "String"
+                case x        => config.typeMappings.getOrElse(x, x)
+              }
+            } else {
+              toUpperCamel(key)
             }
-          } else {
-            toUpperCamel(key)
-          }
 
-          val arrayType = if(config.arrayProperties.get(name).orElse(
-            config.arrayProperties.get(file.getName + "#" + name)).exists(_.contains(key))){
-            s"Array[${typeName}]"
-          } else {
-            typeName
-          }
+            val arrayType = if(config.arrayProperties.get(name).orElse(
+              config.arrayProperties.get(file.getName + "#" + name)).exists(_.contains(key))){
+              s"Array[${typeName}]"
+            } else {
+              typeName
+            }
 
-          val optionType = if(value.get("null_value") == Some("na")){
-            arrayType
-          } else {
-            s"Option[${arrayType}]"
+            val optionType = if(value.get("null_value") == Some("na")){
+              arrayType
+            } else {
+              s"Option[${arrayType}]"
+            }
+            PropInfo(key, optionType, typeName)
           }
-          PropInfo(key, optionType, typeName)
-        }}.toList
+        }.toList
       )
     }
   }

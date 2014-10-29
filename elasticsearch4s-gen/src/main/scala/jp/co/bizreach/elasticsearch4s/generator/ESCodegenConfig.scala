@@ -6,7 +6,8 @@ case class ESCodegenConfig(
   jsonFiles: Seq[String] = Seq("schema.json"),
   classMappings: Map[String, String] = Map.empty,
   typeMappings: Map[String, String] = Map.empty,
-  arrayProperties: Map[String, Seq[String]] = Map.empty
+  arrayProperties: Map[String, Seq[String]] = Map.empty,
+  ignoreProperties: Seq[String] = Nil
 )
 
 object ESCodegenConfig {
@@ -37,7 +38,8 @@ object ESCodegenConfig {
         val key   = array(0).trim
         val value = array(1).trim
         key -> value.split(",").map(_.trim).toSeq
-      }.toMap else Map.empty
+      }.toMap else Map.empty,
+      ignoreProperties = if(config.hasPath("es-gen.ignore.properties")) config.getStringList("es-gen.ignore.properties").asScala.toSeq else Nil
     )
   }
 }
