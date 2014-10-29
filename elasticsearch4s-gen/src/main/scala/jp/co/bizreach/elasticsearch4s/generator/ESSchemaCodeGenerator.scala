@@ -100,17 +100,19 @@ object ESSchemaCodeGenerator {
   private def generateSource(classInfo: ClassInfo): String = {
     val sb = new StringBuilder()
     if(classInfo.props.length > 22){
-      sb.append(s"class ${classInfo.name}(")
+      sb.append("@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)\n")
+      sb.append(s"class ${classInfo.name}(\n")
       sb.append(classInfo.props.map { propInfo =>
-        s"val ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
-      }.mkString(", "))
-      sb.append(")\n")
+        s"  val ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
+      }.mkString(", \n"))
+      sb.append("\n)\n")
     } else {
-      sb.append(s"case class ${classInfo.name}(")
+      sb.append("@com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)\n")
+      sb.append(s"case class ${classInfo.name}(\n")
       sb.append(classInfo.props.map { propInfo =>
-        s"${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
-      }.mkString(", "))
-      sb.append(")\n")
+        s"  ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
+      }.mkString(", \n"))
+      sb.append("\n)\n")
     }
     sb.toString
   }
