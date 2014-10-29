@@ -48,6 +48,7 @@ private[elasticsearch4s] object JsonUtils {
         }
       })
 
+    mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
     mapper.registerModule(testModule)
     mapper.readValue(json, c.runtimeClass).asInstanceOf[T]
   }

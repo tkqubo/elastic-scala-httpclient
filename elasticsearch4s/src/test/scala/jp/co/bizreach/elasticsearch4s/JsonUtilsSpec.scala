@@ -15,5 +15,4 @@ class JsonUtilsSpec extends FunSuite {
 
 }
 
-@JsonIgnoreProperties(ignoreUnknown = true)
 case class Sample(name: String)
