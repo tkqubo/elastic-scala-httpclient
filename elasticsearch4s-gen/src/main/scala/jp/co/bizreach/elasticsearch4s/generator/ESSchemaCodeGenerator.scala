@@ -131,9 +131,10 @@ object ESSchemaCodeGenerator {
               value("type").toString match {
                 case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
                 case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
-                case "long"   => "Long"
-                case "string" => "String"
-                case x        => config.typeMappings.getOrElse(x, x)
+                case "long"    => "Long"
+                case "string"  => "String"
+                case "boolean" => "Boolean"
+                case x         => config.typeMappings.getOrElse(x, x)
               }
             } else {
               toUpperCamel(key)
