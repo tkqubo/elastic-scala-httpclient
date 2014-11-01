@@ -142,23 +142,14 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
   def list[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): ESSearchResult[T] = {
     search(config)(f) match {
       case Left(x)  => throw new RuntimeException(x("error").toString)
-      case Right(x) => {
-        val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
-        val hits  = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
+      case Right(x) => createESSearchResult(x)
+    }
+  }
 
-        ESSearchResult(
-          total,
-          hits.map { hit =>
-            ESSearchResultItem(hit("_id").toString,
-              JsonUtils.deserialize[T](JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]])),
-              hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
-            )
-          }.toList,
-          x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty),
-          x.get("aggregations").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty),
-          x
-        )
-      }
+  def listByTemplate[T](config: ESConfig)(lang: String, template: String, params: AnyRef)(implicit c: ClassTag[T]): ESSearchResult[T] = {
+    searchByTemplate(config)(lang, template, params) match {
+      case Left(x)  => throw new RuntimeException(x("error").toString)
+      case Right(x) => createESSearchResult(x)
     }
   }
 
@@ -171,6 +162,24 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
   def release() = {
     queryClient.close()
     httpClient.close()
+  }
+
+  private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
+    val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+    val hits  = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
+
+    ESSearchResult(
+      total,
+      hits.map { hit =>
+        ESSearchResultItem(hit("_id").toString,
+          JsonUtils.deserialize[T](JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]])),
+          hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
+        )
+      }.toList,
+      x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty),
+      x.get("aggregations").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty),
+      x
+    )
   }
 
 }
