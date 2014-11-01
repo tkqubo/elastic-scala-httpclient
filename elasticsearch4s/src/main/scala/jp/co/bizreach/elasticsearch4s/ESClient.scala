@@ -7,6 +7,7 @@ import org.apache.http.impl.client.CloseableHttpClient
 import org.elasticsearch.client.support.AbstractClient
 import org.elasticsearch.index.query.{QueryBuilders, QueryBuilder}
 import scala.reflect.ClassTag
+import scala.collection.JavaConverters._
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -102,6 +103,24 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     logger.debug(s"searchRequest:${searcher.toString}")
 
     val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
+  def searchByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val json = JsonUtils.serialize(
+      Map(
+        "lang" -> lang,
+        "template" -> Map(
+          "file" -> template
+        ),
+        "params" -> params
+      )
+    )
+    logger.debug(s"searchRequest:${json}")
+
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/template", json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
