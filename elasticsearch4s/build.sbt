@@ -14,7 +14,7 @@ libraryDependencies <++= scalaVersion(sv => Seq(
   "joda-time"                    %  "joda-time"             % "2.2",
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
-  "org.apache.httpcomponents"    %  "httpclient"            % "4.3.4",
+  "org.apache.httpcomponents"    %  "httpclient"            % "4.3.1",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"  % (if(sv.startsWith("2.10")) "2.3.3" else "2.4.1"),
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 ))
