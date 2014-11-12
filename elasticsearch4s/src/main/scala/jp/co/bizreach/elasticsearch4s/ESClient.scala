@@ -107,7 +107,7 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def searchByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
+  def searchByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef, options: Option[String] = None): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val json = JsonUtils.serialize(
       Map(
@@ -120,7 +120,7 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     )
     logger.debug(s"searchRequest:${json}")
 
-    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/template", json)
+    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/template" + options.getOrElse(""), json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -150,6 +150,17 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     searchByTemplate(config)(lang, template, params) match {
       case Left(x)  => throw new RuntimeException(x("error").toString)
       case Right(x) => createESSearchResult(x)
+    }
+  }
+
+  def countByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
+    searchByTemplate(config)(lang, template, params, Some("?search_type=count"))
+  }
+
+  def countByTemplateAsInt(config: ESConfig)(lang: String, template: String, params: AnyRef): Int = {
+    countByTemplate(config)(lang: String, template: String, params: AnyRef) match {
+      case Left(x)  => throw new RuntimeException(x("error").toString)
+      case Right(x) => x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
     }
   }
 
