@@ -107,6 +107,20 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
+  def searchAll(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
+    count(config)(f) match {
+      case Left(x)  => Left(x)
+      case Right(x) => {
+        val total = x("count").asInstanceOf[Int]
+        search(config) { searcher =>
+          f(searcher)
+          searcher.setFrom(0)
+          searcher.setSize(total)
+        }
+      }
+    }
+  }
+
   def searchByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef, options: Option[String] = None): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val json = JsonUtils.serialize(
@@ -146,6 +160,14 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     }
   }
 
+  def listAll[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): ESSearchResult[T] = {
+    list(config){ searcher =>
+      f(searcher)
+      searcher.setFrom(0)
+      searcher.setSize(countAsInt(config)(f))
+    }
+  }
+
   def listByTemplate[T](config: ESConfig)(lang: String, template: String, params: AnyRef)(implicit c: ClassTag[T]): ESSearchResult[T] = {
     searchByTemplate(config)(lang, template, params) match {
       case Left(x)  => throw new RuntimeException(x("error").toString)
@@ -169,6 +191,18 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
+
+//  def scroll(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
+//    logger.debug("******** ESConfig:" + config.toString)
+//    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+//    f(searcher)
+//    logger.debug(s"searchRequest:${searcher.toString}")
+//
+//    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/scroll?scroll=5m", searcher.toString)
+//    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+//    println(map)
+//    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+//  }
 
   def release() = {
     queryClient.close()
