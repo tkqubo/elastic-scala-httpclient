@@ -8,6 +8,7 @@ import org.elasticsearch.client.support.AbstractClient
 import org.elasticsearch.index.query.{QueryBuilders, QueryBuilder}
 import scala.reflect.ClassTag
 import scala.collection.JavaConverters._
+import scala.annotation.tailrec
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -192,17 +193,43 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-//  def scroll(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
-//    logger.debug("******** ESConfig:" + config.toString)
-//    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
-//    f(searcher)
-//    logger.debug(s"searchRequest:${searcher.toString}")
-//
-//    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/scroll?scroll=5m", searcher.toString)
-//    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-//    println(map)
-//    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
-//  }
+  def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: T => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    f(searcher)
+    logger.debug(s"searchRequest:${searcher.toString}")
+
+    scroll0(s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString, Stream.empty,
+      (map: Map[String, Any]) => p(JsonUtils.deserialize[T](JsonUtils.serialize(map))))
+  }
+
+  def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    f(searcher)
+    logger.debug(s"searchRequest:${searcher.toString}")
+
+    scroll0(s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString, Stream.empty,
+      (map: Map[String, Any]) => p(map))
+  }
+
+  @tailrec
+  private def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: Map[String, Any] => R): Stream[R] = {
+    val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m", body)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    if(map.get("error").isDefined){
+      throw new RuntimeException(map("error").toString)
+    } else {
+      val scrollId = map("_scroll_id").toString
+      val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
+      list match {
+        case Nil  => stream
+        case list => scroll0(s"${url}/_search/scroll", scrollId, stream ++ list.map { map =>
+          invoker(map("_source").asInstanceOf[Map[String, Any]])
+        }.toStream, invoker)
+      }
+    }
+  }
 
   def release() = {
     queryClient.close()
