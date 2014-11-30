@@ -1,0 +1,39 @@
+{
+  "settings": {
+    "analysis": {
+      "tokenizer": {
+        "bigram": {
+          "type": "ngram",
+          "min_gram": "2",
+          "max_gram": "2"
+        }
+      },
+      "analyzer": {
+        "bigram_analyzer": {
+          "tokenizer": "bigram",
+          "filter": [
+            "asciifolding",
+            "lowercase"
+          ]
+        }
+      }
+    }
+  },
+  "mappings": {
+    "my_type" : {
+      "properties" : {
+        "blog" : {
+          "properties" : {
+            "subject" : {
+              "type" : "string"
+            },
+            "content" : {
+              "type" : "string",
+              "analyzer": "bigram_analyzer"
+            }
+          }
+        }
+      }
+    }
+  }
+}
