@@ -3,11 +3,8 @@ package jp.co.bizreach.elasticsearch4s
 import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import org.slf4j.LoggerFactory
-import org.apache.http.impl.client.CloseableHttpClient
 import org.elasticsearch.client.support.AbstractClient
-import org.elasticsearch.index.query.{QueryBuilders, QueryBuilder}
 import scala.reflect.ClassTag
-import scala.collection.JavaConverters._
 import scala.annotation.tailrec
 import com.ning.http.client.AsyncHttpClient
 

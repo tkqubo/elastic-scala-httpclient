@@ -1,12 +1,7 @@
 package jp.co.bizreach.elasticsearch4s
 
-import org.apache.http.client.methods.{HttpDelete, HttpPost, HttpPut}
-import org.apache.http.impl.client.{CloseableHttpClient, HttpClientBuilder}
-import org.apache.http.entity.StringEntity
-import java.nio.charset.StandardCharsets
-import org.apache.http.util.EntityUtils
-
 import com.ning.http.client._
+import scala.concurrent._
 import java.util.concurrent.Future
 
 object HttpUtils {
