@@ -6,51 +6,38 @@ import org.apache.http.entity.StringEntity
 import java.nio.charset.StandardCharsets
 import org.apache.http.util.EntityUtils
 
+import com.ning.http.client._
+import java.util.concurrent.Future
+
 object HttpUtils {
 
-  def createHttpClient(): CloseableHttpClient = {
-    HttpClientBuilder.create().build()
+  def createHttpClient(): AsyncHttpClient = {
+    new AsyncHttpClient()
   }
 
-  def closeHttpClient(httpClient: CloseableHttpClient): Unit = {
+  def closeHttpClient(httpClient: AsyncHttpClient): Unit = {
     httpClient.close()
   }
 
-  def put(httpClient: CloseableHttpClient, url: String, json: String): String = {
-    val request = new HttpPut(url)
-    try {
-      val entry = new StringEntity(json, StandardCharsets.UTF_8)
-      entry.setContentType("application/json")
-      request.setEntity(entry)
-      val response = httpClient.execute(request)
 
-      EntityUtils.toString(response.getEntity())
-    } finally {
-      request.releaseConnection()
-    }
+  def put(httpClient: AsyncHttpClient, url: String, json: String): String = {
+    val f = httpClient.preparePut(url).setBody(json.getBytes("UTF-8")).execute()
+    f.get().getResponseBody("UTF-8")
   }
 
-  def post(httpClient: CloseableHttpClient, url: String, json: String): String = {
-    val request = new HttpPost(url)
-    try {
-      val entry = new StringEntity(json, StandardCharsets.UTF_8)
-      entry.setContentType("application/json")
-      request.setEntity(entry)
-      val response = httpClient.execute(request)
-
-      EntityUtils.toString(response.getEntity())
-    } finally {
-      request.releaseConnection()
-    }
+  def post(httpClient: AsyncHttpClient, url: String, json: String): String = {
+    val f = httpClient.preparePost(url).setBody(json.getBytes("UTF-8")).execute()
+    f.get().getResponseBody("UTF-8")
   }
 
-  def delete(httpClient: CloseableHttpClient, url: String): String = {
-    val request = new HttpDelete(url)
-    try {
-      val response = httpClient.execute(request)
-      EntityUtils.toString(response.getEntity())
-    } finally {
-      request.releaseConnection()
+  def delete(httpClient: AsyncHttpClient, url: String, json: String = ""): String = {
+    val builder = httpClient.prepareDelete(url)
+    if(json.nonEmpty){
+      builder.setBody(json.getBytes("UTF-8"))
     }
+    val f = builder.execute()
+    val response = f.get()
+
+    response.getResponseBody("UTF-8")
   }
 }

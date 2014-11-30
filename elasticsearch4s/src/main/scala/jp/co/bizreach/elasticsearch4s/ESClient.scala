@@ -9,6 +9,7 @@ import org.elasticsearch.index.query.{QueryBuilders, QueryBuilder}
 import scala.reflect.ClassTag
 import scala.collection.JavaConverters._
 import scala.annotation.tailrec
+import com.ning.http.client.AsyncHttpClient
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -42,7 +43,7 @@ case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]],
 )
 case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, List[String]])
 
-class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url: String) {
+class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String) {
 
   def insertJson(config: ESConfig, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"insertJson:\n${json}")
@@ -78,10 +79,22 @@ class ESClient(queryClient: AbstractClient, httpClient: CloseableHttpClient, url
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
+  def deleteByQuery(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
+    f(searcher)
+    logger.debug(s"deleteByQuery:${searcher.toString}")
+
+    val resultJson = HttpUtils.delete(httpClient, s"${url}/${config.indexName}/${config.typeName}/_query", searcher.toString)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
   def count(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
-    searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
+    //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"countRequest:${searcher.toString}")
 
