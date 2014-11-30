@@ -34,12 +34,6 @@ object ESClient {
   }
 }
 
-case class ESConfig(indexName: String, typeName: String)
-case class ESSearchResult[T](totalHits: Long, list: List[ESSearchResultItem[T]], facets: Map[String, Map[String, Any]],
-  aggregations: Map[String, Any], source: Map[String, Any]
-)
-case class ESSearchResultItem[T](id: String, doc: T, highlightFields: Map[String, List[String]])
-
 class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String) {
 
   def insertJson(config: ESConfig, json: String): Either[Map[String, Any], Map[String, Any]] = {

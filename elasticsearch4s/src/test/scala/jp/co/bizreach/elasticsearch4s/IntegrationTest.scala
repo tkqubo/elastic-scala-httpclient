@@ -4,6 +4,7 @@ import org.scalatest._
 import scala.io._
 import org.elasticsearch.index.query.QueryBuilders
 import IntegrationTest._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class IntegrationTest extends FunSuite {
 
@@ -45,6 +46,19 @@ class IntegrationTest extends FunSuite {
 //        searcher.setQuery(QueryBuilders.matchPhraseQuery("subject", "10"))
 //      }
 //      println(result)
+//    }
+//  }
+
+//  test("Search by async API"){
+//    val config = ESConfig("my_index", "my_type")
+//    AsyncESClient.using("http://localhost:9200"){ client =>
+//      val f = client.searchAsync(config){ searcher =>
+//        searcher.setQuery(QueryBuilders.matchPhraseQuery("subject", "Hello"))
+//      }
+//      f.foreach { map =>
+//        println(map)
+//        AsyncESClient.shutdown()
+//      }
 //    }
 //  }
 
