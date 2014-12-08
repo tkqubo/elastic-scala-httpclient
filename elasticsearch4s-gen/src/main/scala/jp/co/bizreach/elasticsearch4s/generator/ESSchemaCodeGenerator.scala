@@ -151,7 +151,7 @@ object ESSchemaCodeGenerator {
               typeName
             }
 
-            val optionType = if(value.get("null_value") == Some("na")){
+            val optionType = if(value.get("null_value").isDefined){
               arrayType
             } else {
               s"Option[${arrayType}]"
