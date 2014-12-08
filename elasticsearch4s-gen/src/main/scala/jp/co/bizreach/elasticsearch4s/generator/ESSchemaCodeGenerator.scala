@@ -28,7 +28,7 @@ object ESSchemaCodeGenerator {
             val sb = new StringBuilder()
             val head = classInfoList.head
             val tail = classInfoList.tail
-            val name = config.classMappings.get(head.name)
+            //val name = config.classMappings.get(head.name)
             sb.append(s"package ${config.packageName}\n")
             sb.append(s"import ${head.name}._\n")
             sb.append("\n")
@@ -40,6 +40,9 @@ object ESSchemaCodeGenerator {
             sb.append("\n")
             tail.foreach { classInfo =>
               sb.append(generateSource("  ", classInfo))
+            }
+            if(tail.exists(x => x.props.exists(_.rawTypeName == "GeoPoint"))){
+              sb.append(generateSource("  ", ClassInfo("GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
             }
             sb.append("\n")
             head.props.foreach { prop =>
@@ -130,11 +133,12 @@ object ESSchemaCodeGenerator {
             val typeName = if(value.contains("type")){
               value("type").toString match {
                 case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
-                case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
-                case "long"    => "Long"
-                case "string"  => "String"
-                case "boolean" => "Boolean"
-                case x         => config.typeMappings.getOrElse(x, x)
+                //case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
+                case "long"      => "Long"
+                case "string"    => "String"
+                case "boolean"   => "Boolean"
+                case "geo_point" => "GeoPoint"
+                case x           => config.typeMappings.getOrElse(x, x)
               }
             } else {
               toUpperCamel(key)
