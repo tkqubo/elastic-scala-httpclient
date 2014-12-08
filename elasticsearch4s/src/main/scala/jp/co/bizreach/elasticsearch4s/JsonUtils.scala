@@ -15,11 +15,11 @@ private[elasticsearch4s] object JsonUtils {
     val mapper = new ObjectMapper()
     mapper.registerModule(DefaultScalaModule)
     val testModule = new SimpleModule("MyModule", Version.unknownVersion())
-      .addSerializer(classOf[LocalDate], new JsonSerializer[LocalDate] {
-        override def serialize(value: LocalDate, generator: JsonGenerator, provider: SerializerProvider): Unit = {
-          generator.writeString(value.toString("yyyy/MM/dd", Locale.ENGLISH))
-        }
-      })
+//      .addSerializer(classOf[LocalDate], new JsonSerializer[LocalDate] {
+//        override def serialize(value: LocalDate, generator: JsonGenerator, provider: SerializerProvider): Unit = {
+//          generator.writeString(value.toString("yyyy/MM/dd", Locale.ENGLISH))
+//        }
+//      })
       .addSerializer(classOf[DateTime], new JsonSerializer[DateTime] {
         override def serialize(value: DateTime, generator: JsonGenerator, provider: SerializerProvider): Unit = {
           val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC()
@@ -36,11 +36,11 @@ private[elasticsearch4s] object JsonUtils {
     mapper.registerModule(DefaultScalaModule)
 
     val testModule = new SimpleModule("MyModule", Version.unknownVersion())
-      .addDeserializer(classOf[LocalDate], new JsonDeserializer[LocalDate](){
-        override def deserialize(parser: JsonParser, context: DeserializationContext): LocalDate = {
-          DateTimeFormat.forPattern("yyyy/MM/dd").parseLocalDate(parser.getValueAsString)
-        }
-      })
+//      .addDeserializer(classOf[LocalDate], new JsonDeserializer[LocalDate](){
+//        override def deserialize(parser: JsonParser, context: DeserializationContext): LocalDate = {
+//          DateTimeFormat.forPattern("yyyy/MM/dd").parseLocalDate(parser.getValueAsString)
+//        }
+//      })
       .addDeserializer(classOf[DateTime], new JsonDeserializer[DateTime](){
         override def deserialize(parser: JsonParser, context: DeserializationContext): DateTime = {
           val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC()
