@@ -58,4 +58,34 @@ addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.5")
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
 
-You can configure generation settings in `PROJECT_ROOT/es-gen.conf`. See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elasticsearch4s-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
+You can configure generation settings in `PROJECT_ROOT/es-gen.conf`. Here is a configuration example:
+
+```properties
+# package name
+es-gen.package.name=models
+# schema definition files
+es-gen.json.files=[
+  "./schema/book_master.json",
+  "./schema/book_search.json"
+]
+# map same index name to different classes
+es-gen.class.mappings=[
+  "book_master.json#book:BookMaster",
+  "book_search.json#book:BookSearch"
+]
+# map unknown type
+es-gen.type.mappings=[
+  "minhash:String"
+]
+# specify array properties
+es-gen.array.properties=[
+  "BookMaster.author",
+  "BookSearch.author"
+]
+# specify ignore properties
+es-gen.ignore.properties=[
+  "internalCode"
+]
+```
+
+See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elasticsearch4s-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
