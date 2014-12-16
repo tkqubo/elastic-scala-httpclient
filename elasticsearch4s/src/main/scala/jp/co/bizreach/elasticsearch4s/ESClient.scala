@@ -242,10 +242,12 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
     val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+    val took  = x("took").asInstanceOf[Int]
     val hits  = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
 
     ESSearchResult(
       total,
+      took,
       hits.map { hit =>
         ESSearchResultItem(hit("_id").toString,
           JsonUtils.deserialize[T](JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]])),
