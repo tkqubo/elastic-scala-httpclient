@@ -72,7 +72,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def deleteByQuery(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"deleteByQuery:${searcher.toString}")
@@ -84,7 +85,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def count(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"countRequest:${searcher.toString}")
@@ -103,7 +105,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def search(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
@@ -199,7 +202,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: T => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
@@ -209,7 +213,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 

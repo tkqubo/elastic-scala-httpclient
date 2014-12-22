@@ -28,7 +28,8 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
 
   def searchAsync(config: ESConfig)(f: SearchRequestBuilder => Unit): Future[Either[Map[String, Any], Map[String, Any]]] = {
     logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName).setTypes(config.typeName)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
