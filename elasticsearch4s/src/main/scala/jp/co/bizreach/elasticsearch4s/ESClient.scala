@@ -40,7 +40,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     logger.debug(s"insertJson:\n${json}")
     logger.debug(s"insertRequest:\n${json}")
 
-    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/", json)
+    val resultJson = HttpUtils.post(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/"
+      } else {
+        s"${url}/${config.indexName}/"
+      },
+      json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -53,7 +59,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     logger.debug(s"updateJson:\n${json}")
     logger.debug(s"updateRequest:\n${json}")
 
-    val resultJson = HttpUtils.put(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}", json)
+    val resultJson = HttpUtils.put(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/${id}"
+      } else {
+        s"${url}/${config.indexName}/${id}"
+      },
+      json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -65,7 +77,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
   def delete(config: ESConfig, id: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"delete id:\n${id}")
 
-    val resultJson = HttpUtils.delete(httpClient, s"${url}/${config.indexName}/${config.typeName}/${id}")
+    val resultJson = HttpUtils.delete(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/${id}"
+      } else {
+        s"${url}/${config.indexName}/${id}"
+      }
+    )
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -78,7 +96,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"deleteByQuery:${searcher.toString}")
 
-    val resultJson = HttpUtils.delete(httpClient, s"${url}/${config.indexName}/${config.typeName}/_query", searcher.toString)
+    val resultJson = HttpUtils.delete(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_query"
+      } else {
+        s"${url}/${config.indexName}/_query"
+      },
+      searcher.toString)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -91,7 +115,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"countRequest:${searcher.toString}")
 
-    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_count", searcher.toString)
+    val resultJson = HttpUtils.post(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_count"
+      } else {
+        s"${url}/${config.indexName}/_count"
+      },
+      searcher.toString)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -110,7 +140,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
+    val resultJson = HttpUtils.post(httpClient,
+      if(config.typeName.isDefined) {
+        s"${url}/${config.indexName}/${config.typeName.get}/_search"
+      } else {
+        s"${url}/${config.indexName}/_search"
+      },
+      searcher.toString)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -142,7 +178,12 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     )
     logger.debug(s"searchRequest:${json}")
 
-    val resultJson = HttpUtils.post(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search/template" + options.getOrElse(""), json)
+    val resultJson = HttpUtils.post(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_search/template" + options.getOrElse("")
+      } else {
+        s"${url}/${config.indexName}/_search/template" + options.getOrElse("")
+      },json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -207,8 +248,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    scroll0(s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString, Stream.empty,
-      (map: Map[String, Any]) => p(JsonUtils.deserialize[T](JsonUtils.serialize(map))))
+    scroll0(
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_search"
+      } else {
+        s"${url}/${config.indexName}/_search"
+      }
+      ,searcher.toString, Stream.empty, (map: Map[String, Any]) => p(JsonUtils.deserialize[T](JsonUtils.serialize(map))))
   }
 
   def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
@@ -218,8 +264,13 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    scroll0(s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString, Stream.empty,
-      (map: Map[String, Any]) => p(map))
+    scroll0(
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_search"
+      } else {
+        s"${url}/${config.indexName}/_search"
+      },
+      searcher.toString, Stream.empty, (map: Map[String, Any]) => p(map))
   }
 
   @tailrec

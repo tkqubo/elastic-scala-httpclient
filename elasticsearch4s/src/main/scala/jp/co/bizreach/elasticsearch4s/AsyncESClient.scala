@@ -33,7 +33,13 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    val future = HttpUtils.postAsync(httpClient, s"${url}/${config.indexName}/${config.typeName}/_search", searcher.toString)
+    val future = HttpUtils.postAsync(httpClient,
+      if(config.typeName.isDefined){
+        s"${url}/${config.indexName}/${config.typeName.get}/_search"
+      } else {
+        s"${url}/${config.indexName}/_search"
+      }
+      , searcher.toString)
     future.map { resultJson =>
       val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
       map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
