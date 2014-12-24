@@ -8,7 +8,7 @@ Scala client and code generator for Elasticsearch
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elasticsearch4s" % "0.0.8"
+libraryDependencies += "jp.co.bizreach" %% "elasticsearch4s" % "0.0.9"
 ```
 
 You can access Elasticsearch via REST API as following:
@@ -20,7 +20,7 @@ import jp.co.bizreach.elasticsearch4s._
 
 ESClient.using("http://localhost:9200"){ client =>
   val config = ESConfig("twitter", "tweet")
-  
+
   // Insert
   client.insert(config, Tweet("takezoe", "Hello World!!"))
   client.insertJson(config, """{name: "takezoe", message: "Hello World!!"}""")
@@ -28,15 +28,15 @@ ESClient.using("http://localhost:9200"){ client =>
   // Update
   client.update(config, "1", Tweet("takezoe", "Hello Scala!!"))
   client.updateJson(config, "1", """{name: "takezoe", message: "Hello World!!"}""")
-  
+
   // Delete
   client.delete(config, "1")
-  
+
   // Find one document
   val tweet: Option[(String, Tweet)] = client.find[Tweet](config){ seacher =>
     seacher.setQuery(QueryBuilders.termQuery("_id", "1"))
   }
-  
+
   // Search documents
   val list: List[ESSearchResult] = client.list[Tweet](config){ seacher =>
     seacher.setQuery(QueryBuilders.termQuery("name", "takezoe"))
@@ -53,7 +53,7 @@ elasticsearch4s-gen can generate source code from Elasticsearch schema json file
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.5")
+addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.6")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
