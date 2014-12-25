@@ -232,9 +232,9 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
       list match {
         case Nil  => stream
-        case list => scroll0(s"${url}/_search/scroll", scrollId, stream ++ list.map { map =>
+        case list => scroll0(s"${url}/_search/scroll", scrollId, list.map { map =>
           invoker(map("_source").asInstanceOf[Map[String, Any]])
-        }.toStream, invoker)
+        }.toStream #::: stream, invoker)
       }
     }
   }
