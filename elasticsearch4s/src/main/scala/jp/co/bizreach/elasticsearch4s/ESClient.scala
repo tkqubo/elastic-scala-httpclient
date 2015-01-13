@@ -155,7 +155,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
         if(hits.length == 0){
           None
         } else {
-          Some((hits.head("_id").toString, JsonUtils.deserialize[T](JsonUtils.serialize(hits.head("_source").asInstanceOf[Map[String, Any]]))))
+          Some((hits.head("_id").toString, JsonUtils.deserialize[T](JsonUtils.serialize(getDocumentMap(hits.head)))))
         }
       }
     }
@@ -232,9 +232,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
       list match {
         case Nil  => stream
-        case list => scroll0(s"${url}/_search/scroll", scrollId, list.map { map =>
-          invoker(map("_source").asInstanceOf[Map[String, Any]])
-        }.toStream #::: stream, invoker)
+        case list => scroll0(s"${url}/_search/scroll", scrollId,
+          list.map { map => invoker(getDocumentMap(map)) }.toStream #::: stream, invoker)
       }
     }
   }
@@ -243,6 +242,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     queryClient.close()
     httpClient.close()
   }
+
+  private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = hit.get("_source").getOrElse("fields").asInstanceOf[Map[String, Any]]
 
   private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
     val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
@@ -254,7 +255,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       took,
       hits.map { hit =>
         ESSearchResultItem(hit("_id").toString,
-          JsonUtils.deserialize[T](JsonUtils.serialize(hit("_source").asInstanceOf[Map[String, Any]])),
+          JsonUtils.deserialize[T](JsonUtils.serialize(getDocumentMap(hit))),
           hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
         )
       }.toList,
