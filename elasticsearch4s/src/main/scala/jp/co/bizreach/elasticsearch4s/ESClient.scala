@@ -243,7 +243,9 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     httpClient.close()
   }
 
-  private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = hit.get("_source").getOrElse("fields").asInstanceOf[Map[String, Any]]
+  private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = {
+    hit.get("_source").getOrElse(hit("fields")).asInstanceOf[Map[String, Any]]
+  }
 
   private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
     val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
