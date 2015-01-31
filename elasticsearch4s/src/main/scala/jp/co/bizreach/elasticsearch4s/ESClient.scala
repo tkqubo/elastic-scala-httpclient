@@ -15,11 +15,6 @@ object ESClient {
 
   val logger = LoggerFactory.getLogger(classOf[ESClient])
 
-//  /**
-//   * Create a ESSearchHelper instance.
-//   */
-//  def apply(url: String): ESClient = new ESClient(new QueryBuilderClient(), HttpUtils.createHttpClient(), url)
-
   /**
    * This is the entry point of processing using ElasticSearch.
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
@@ -74,7 +69,6 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName)
     config.typeName.foreach(x => searcher.setTypes(x))
-    //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"deleteByQuery:${searcher.toString}")
 
@@ -87,7 +81,6 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName)
     config.typeName.foreach(x => searcher.setTypes(x))
-    //searcher.setQuery(QueryBuilders.termQuery("multi", "test"))
     f(searcher)
     logger.debug(s"countRequest:${searcher.toString}")
 
@@ -160,6 +153,22 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       }
     }
   }
+
+  def findAsList[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): List[(String, T)] = {
+    search(config)(f) match {
+      case Left(x)  => throw new RuntimeException(x("error").toString)
+      case Right(x) => createESSearchResult(x).list.map { x => (x.id, x.doc) }
+    }
+  }
+
+  def findAllAsList[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): List[(String, T)] = {
+    findAsList(config){ searcher =>
+      f(searcher)
+      searcher.setFrom(0)
+      searcher.setSize(countAsInt(config)(f))
+    }
+  }
+
 
   def list[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): ESSearchResult[T] = {
     search(config)(f) match {
