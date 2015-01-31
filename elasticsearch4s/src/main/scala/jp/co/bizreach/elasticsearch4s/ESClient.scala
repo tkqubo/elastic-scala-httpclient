@@ -209,7 +209,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: T => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
+  def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (String, T) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName)
     config.typeName.foreach(x => searcher.setTypes(x))
@@ -217,21 +217,21 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     logger.debug(s"searchRequest:${searcher.toString}")
 
     scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty,
-      (map: Map[String, Any]) => p(JsonUtils.deserialize[T](JsonUtils.serialize(map))))
+      (_id: String, map: Map[String, Any]) => p(_id, JsonUtils.deserialize[T](JsonUtils.serialize(map))))
   }
 
-  def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
-    logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName)
-    config.typeName.foreach(x => searcher.setTypes(x))
-    f(searcher)
-    logger.debug(s"searchRequest:${searcher.toString}")
-
-    scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty, (map: Map[String, Any]) => p(map))
-  }
+//  def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
+//    logger.debug("******** ESConfig:" + config.toString)
+//    val searcher = queryClient.prepareSearch(config.indexName)
+//    config.typeName.foreach(x => searcher.setTypes(x))
+//    f(searcher)
+//    logger.debug(s"searchRequest:${searcher.toString}")
+//
+//    scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty, (_id: String, map: Map[String, Any]) => p(map))
+//  }
 
   @tailrec
-  private def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: Map[String, Any] => R): Stream[R] = {
+  private def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Stream[R] = {
     val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m", body)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     if(map.get("error").isDefined){
@@ -242,7 +242,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       list match {
         case Nil  => stream
         case list => scroll0(s"${url}/_search/scroll", scrollId,
-          list.map { map => invoker(getDocumentMap(map)) }.toStream #::: stream, invoker)
+          list.map { map => invoker(map("_id").toString, getDocumentMap(map))
+          }.toStream #::: stream, invoker)
       }
     }
   }
