@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory
 import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
 import scala.annotation.tailrec
-import com.ning.http.client.AsyncHttpClient
+import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig, Realm}
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -20,7 +20,18 @@ object ESClient {
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
   def using[T](url: String)(f: ESClient => T): T = {
-    val client = new ESClient(new QueryBuilderClient(), HttpUtils.createHttpClient(), url)
+    val httpClient: AsyncHttpClient =  Option(new java.net.URL(url).getUserInfo) match {
+      case Some(x) => {
+        val userInfo = x.split(":")
+        val realm = new Realm.RealmBuilder()
+          .setPrincipal(userInfo(0))
+          .setPassword(userInfo.lift(1).getOrElse(""))
+          .build()
+        HttpUtils.createHttpClient(new AsyncHttpClientConfig.Builder().setRealm(realm).build())
+      }
+      case _ => HttpUtils.createHttpClient()
+    }
+    val client = new ESClient(new QueryBuilderClient(), httpClient, url)
     try {
       f(client)
     } finally {

@@ -9,6 +9,10 @@ object HttpUtils {
     new AsyncHttpClient()
   }
 
+  def createHttpClient(builder: AsyncHttpClientConfig): AsyncHttpClient = {
+    new AsyncHttpClient(builder)
+  }
+
   def closeHttpClient(httpClient: AsyncHttpClient): Unit = {
     httpClient.close()
   }
