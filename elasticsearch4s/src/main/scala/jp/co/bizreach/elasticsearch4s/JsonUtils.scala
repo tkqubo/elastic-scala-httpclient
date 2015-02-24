@@ -29,6 +29,7 @@ private[elasticsearch4s] object JsonUtils {
   def deserialize[T](json: String)(implicit c: ClassTag[T]): T = {
     val mapper = new ObjectMapper()
     mapper.registerModule(DefaultScalaModule)
+    mapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)
 
     val testModule = new SimpleModule("MyModule", Version.unknownVersion())
       .addDeserializer(classOf[DateTime], new JsonDeserializer[DateTime](){
