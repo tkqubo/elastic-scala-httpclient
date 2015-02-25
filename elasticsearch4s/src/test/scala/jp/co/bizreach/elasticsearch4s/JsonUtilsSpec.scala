@@ -2,7 +2,6 @@ package jp.co.bizreach.elasticsearch4s
 
 import org.joda.time.DateTime
 import org.scalatest._
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 class JsonUtilsSpec extends FunSuite {
 
