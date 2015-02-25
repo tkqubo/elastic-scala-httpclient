@@ -17,7 +17,7 @@ class JsonUtilsSpec extends FunSuite {
 
   test("deserialize single value array"){
     // array to single property
-    val sample1 = JsonUtils.deserialize[ArraySample]("""{"name": ["Naoki Takezoe"]}""")
+    val sample1 = JsonUtils.deserialize[SimpleSample]("""{"name": ["Naoki Takezoe"]}""")
     assert(sample1.name === "Naoki Takezoe")
 
     // array to array property
@@ -27,11 +27,11 @@ class JsonUtilsSpec extends FunSuite {
 
   test("deserialize date property"){
     // array to single property
-    val sample1 = JsonUtils.deserialize[DateSample]("""{"date": "2015-02-25T21:10:12.456Z"}""")
+    val sample1 = JsonUtils.deserialize[DateSample]("""{"date": ["2015-02-25T21:10:12.456Z"]}""")
     assert(sample1.date.toString() === "2015-02-25T21:10:12.456Z")
 
     // array to array property
-    val sample2 = JsonUtils.deserialize[DateArraySample]("""{"date": "2015-02-25T21:10:12.456Z", "age": 35}""")
+    val sample2 = JsonUtils.deserialize[DateArraySample]("""{"date": ["2015-02-25T21:10:12.456Z"]}""")
     assert(sample2.date.map(_.toString()) === Array("2015-02-25T21:10:12.456Z"))
   }
 }
