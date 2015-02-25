@@ -35,7 +35,7 @@ private[elasticsearch4s] object JsonUtils {
       .addDeserializer(classOf[DateTime], new JsonDeserializer[DateTime](){
         override def deserialize(parser: JsonParser, context: DeserializationContext): DateTime = {
           val formatter = DateTimeFormat.forPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'").withZoneUTC()
-          formatter.parseDateTime(parser.getValueAsString)
+          formatter.parseDateTime(if(parser.getValueAsString != null) parser.getValueAsString else parser.nextTextValue)
         }
       })
 
