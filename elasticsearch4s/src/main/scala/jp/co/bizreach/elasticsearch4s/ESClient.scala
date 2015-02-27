@@ -265,7 +265,8 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
   }
 
   private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = {
-    hit.get("_source").getOrElse(hit("fields")).asInstanceOf[Map[String, Any]]
+    hit.get("_source").map(_.asInstanceOf[Map[String, Any]])
+      .getOrElse(structuredMap(hit("fields").asInstanceOf[Map[String, Any]]))
   }
 
   private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
@@ -286,6 +287,21 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
       x.get("aggregations").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty),
       x
     )
+  }
+
+  private def structuredMap(map: Map[String, Any]): Map[String, Any] = {
+    def structuredMap0(group: List[(List[String], Any)]): Any = {
+      group.groupBy { case (key, value) => key.head }.map { case (key, value) =>
+        key -> (if(value.head._1.length == 1){
+          value.head._2
+        } else {
+          structuredMap0(value.map { case (key, value) => key.tail -> value })
+        })
+      }
+    }
+
+    val list = map.map { case (key, value) => key.split("\\.").toList -> value }.toList
+    structuredMap0(list).asInstanceOf[Map[String, Any]]
   }
 
 }
