@@ -4,8 +4,7 @@ import com.fasterxml.jackson.databind._
 import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import com.fasterxml.jackson.databind.module.SimpleModule
 import com.fasterxml.jackson.core.{JsonGenerator, JsonParser, Version}
-import java.util.Locale
-import org.joda.time.{DateTime, LocalDate}
+import org.joda.time.DateTime
 import org.joda.time.format.DateTimeFormat
 import scala.reflect.ClassTag
 
