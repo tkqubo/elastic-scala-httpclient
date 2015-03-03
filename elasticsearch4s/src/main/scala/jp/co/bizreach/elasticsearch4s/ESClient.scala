@@ -95,7 +95,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"countRequest:${searcher.toString}")
 
-    val resultJson = HttpUtils.post(httpClient, config.url(url) + "/_count", searcher.toString)
+    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_count"), searcher.toString)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -114,7 +114,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     f(searcher)
     logger.debug(s"searchRequest:${searcher.toString}")
 
-    val resultJson = HttpUtils.post(httpClient, config.url(url) + "/_search", searcher.toString)
+    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_search"), searcher.toString)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -146,7 +146,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     )
     logger.debug(s"searchRequest:${json}")
 
-    val resultJson = HttpUtils.post(httpClient, config.url(url) + "/_search/template" + options.getOrElse(""), json)
+    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_search/template" + options.getOrElse("")), json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
