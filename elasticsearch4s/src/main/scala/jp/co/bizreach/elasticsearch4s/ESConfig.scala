@@ -18,7 +18,7 @@ case class ESConfig(indexName: String, typeName: Option[String] = None, preferen
     val u = url(baseUrl) + "/" + path
     u + preference.map { x =>
       (if(u.indexOf('?') >= 0) "&" else "?") + "preference=" + x
-    }
+    }.getOrElse("")
   }
 
 }
