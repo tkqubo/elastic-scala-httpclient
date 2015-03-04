@@ -10,9 +10,10 @@ import scala.reflect.ClassTag
 
 private[elasticsearch4s] object JsonUtils {
 
-  val mapper = new ObjectMapper()
+  private val mapper = new ObjectMapper()
   mapper.enable(DeserializationFeature.UNWRAP_SINGLE_VALUE_ARRAYS)
   mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+  mapper.registerModule(DefaultScalaModule)
   mapper.registerModule(new SimpleModule("MyModule", Version.unknownVersion())
     .addSerializer(classOf[DateTime], new JsonSerializer[DateTime] {
       override def serialize(value: DateTime, generator: JsonGenerator, provider: SerializerProvider): Unit = {
