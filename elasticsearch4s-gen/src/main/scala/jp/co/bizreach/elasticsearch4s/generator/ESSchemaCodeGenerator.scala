@@ -52,7 +52,7 @@ object ESSchemaCodeGenerator {
             sb.append("  implicit def name2string(name: Name): String = name.toString()\n")
             sb.append("\n")
             sb.append("  case class Name(name: String){\n")
-            sb.append("    lazy val key = if(name.contains(\".\")) name else name.split(\"\\\\.\").last\n")
+            sb.append("    lazy val key = if(name.contains(\".\")) name.split(\"\\\\.\").last else name\n")
             sb.append("    override def toString(): String = name\n")
             sb.append("  }\n")
 
