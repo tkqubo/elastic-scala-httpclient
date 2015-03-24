@@ -28,7 +28,7 @@ object ESSchemaCodeGenerator {
             val sb = new StringBuilder()
             val head = classInfoList.head
             val tail = classInfoList.tail
-            //val name = config.classMappings.get(head.name)
+
             sb.append(s"package ${config.packageName}\n")
             sb.append(s"import ${head.name}._\n")
             sb.append("\n")
@@ -45,6 +45,17 @@ object ESSchemaCodeGenerator {
               sb.append(generateSource("  ", ClassInfo("GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
             }
             sb.append("\n")
+
+            sb.append("  implicit val reflectiveCalls = scala.language.reflectiveCalls\n")
+            sb.append("  implicit val implicitConversions = scala.language.implicitConversions\n")
+            sb.append("\n")
+            sb.append("  implicit def name2string(name: Name): String = name.toString()\n")
+            sb.append("\n")
+            sb.append("  case class Name(name: String){\n")
+            sb.append("    lazy val key = if(name.contains(\".\")) name else name.split(\"\\\\.\").last\n")
+            sb.append("    override def toString(): String = name\n")
+            sb.append("  }\n")
+
             head.props.foreach { prop =>
               sb.append(generateNames("  ", "", prop, tail))
             }
@@ -64,25 +75,26 @@ object ESSchemaCodeGenerator {
     val sb = new StringBuilder()
     if(classes.exists(_.name == prop.rawTypeName)){
       if(isValidIdentifier(prop.name)){
-        sb.append(s"${indent}val ${prop.name} = ${prop.rawTypeName}Names\n")
+        sb.append(s"""${indent}val ${prop.name} = new Name("${prefix}${prop.name}"){""")
       } else {
-        sb.append(s"${indent}val `${prop.name}` = ${prop.rawTypeName}Names\n")
+        sb.append(s"""${indent}val `${prop.name}` = new Name("${prefix}${prop.name}"){""")
       }
-      sb.append(s"${indent}object ${prop.rawTypeName}Names {\n")
+      sb.append("\n")
       classes.find(_.name == prop.rawTypeName).get.props.foreach { child =>
         sb.append(generateNames(indent + "  ", prefix + prop.name + ".", child, classes))
       }
-      sb.append(s"""${indent}${indent}override def toString() = "${prefix}${prop.name}"\n""")
       sb.append(s"${indent}}\n")
     } else {
       if(isValidIdentifier(prop.name)){
-        sb.append(s"""${indent}val ${prop.name} = "${prefix}${prop.name}"\n""")
+        sb.append(s"""${indent}val ${prop.name} = Name("${prefix}${prop.name}")\n""")
       } else {
-        sb.append(s"""${indent}val `${prop.name}` = "${prefix}${prop.name}"\n""")
+        sb.append(s"""${indent}val `${prop.name}` = Name("${prefix}${prop.name}")\n""")
       }
     }
     sb.toString
   }
+
+  case class Name(name: String)
 
   private def read(file: File): String = IOUtils.toString(new FileInputStream(file), "UTF-8")
 
@@ -97,7 +109,7 @@ object ESSchemaCodeGenerator {
       } else {
         None
       }
-    }.flatten.toList
+    }.flatten.toSeq.distinct.toList
   }
 
   private def generateSource(indent: String, classInfo: ClassInfo): String = {
