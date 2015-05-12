@@ -1,10 +1,10 @@
 sbtPlugin := true
 
-name := "elasticsearch4s-gen"
+name := "elastic-scala-gen"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.7"
+version := "1.0.0"
 
 scalaVersion := "2.10.3"
 

@@ -1,8 +1,8 @@
-name := "elasticsearch4s"
+name := "elastic-scala-httpclient"
 
 organization := "jp.co.bizreach"
 
-version := "0.0.12-SNAPSHOT"
+version := "1.0.0"
 
 scalaVersion := "2.11.2"
 

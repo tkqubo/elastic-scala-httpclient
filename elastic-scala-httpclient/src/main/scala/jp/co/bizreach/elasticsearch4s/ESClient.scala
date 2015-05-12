@@ -1,5 +1,6 @@
 package jp.co.bizreach.elasticsearch4s
 
+import org.elasticsearch.action.bulk.BulkRequest
 import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import org.slf4j.LoggerFactory
@@ -240,6 +241,12 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 //
 //    scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty, (_id: String, map: Map[String, Any]) => p(map))
 //  }
+
+  def bulk[T](actions: Seq[BulkAction]): Either[Map[String, Any], Map[String, Any]] = {
+    val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("\n"))
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
 
   @tailrec
   private def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Stream[R] = {
