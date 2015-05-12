@@ -88,4 +88,4 @@ es-gen.ignore.properties=[
 ]
 ```
 
-See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elastic-scala-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
+See [ESCodegenConfig.scala](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
