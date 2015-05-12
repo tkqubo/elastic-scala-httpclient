@@ -40,4 +40,44 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     }
   }
 
+  def insertJsonAsync(config: ESConfig, json: String): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    logger.debug(s"insertJson:\n${json}")
+    logger.debug(s"insertRequest:\n${json}")
+
+    val future = HttpUtils.postAsync(httpClient, config.url(url), json)
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
+  def insertAsync(config: ESConfig, entity: AnyRef):  Future[Either[Map[String, Any], Map[String, Any]]] = {
+    insertJsonAsync(config, JsonUtils.serialize(entity))
+  }
+
+  def updateJsonAsync(config: ESConfig, id: String, json: String): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    logger.debug(s"updateJson:\n${json}")
+    logger.debug(s"updateRequest:\n${json}")
+
+    val future = HttpUtils.putAsync(httpClient, config.url(url) + "/" + id, json)
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
+  def updateAsync(config: ESConfig, id: String, entity: AnyRef): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    updateJsonAsync(config, id, JsonUtils.serialize(entity))
+  }
+
+  def deleteAsync(config: ESConfig, id: String): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    logger.debug(s"delete id:\n${id}")
+
+    val future = HttpUtils.deleteAsync(httpClient, config.url(url) + "/" + id)
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
 }
