@@ -1,17 +1,17 @@
-elasticsearch4s   [![Build Status](https://secure.travis-ci.org/bizreach/elasticsearch4s.png?branch=master)](http://travis-ci.org/bizreach/elasticsearch4s)
+elastic-scala-httpclient   [![Build Status](https://secure.travis-ci.org/bizreach/elasticsearch4s.png?branch=master)](http://travis-ci.org/bizreach/elasticsearch4s)
 ===============
 
-Scala client and code generator for Elasticsearch
+Elasticsearch HTTP client for Scala with code generator.
 
 ## How to use
 
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elasticsearch4s" % "0.0.11"
+libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "1.0.0"
 ```
 
-You can access Elasticsearch via REST API as following:
+You can access Elasticsearch via HTTP Rest API as following:
 
 ```scala
 case class Tweet(name: String, message: String)
@@ -24,7 +24,7 @@ ESClient.using("http://localhost:9200"){ client =>
   // Insert
   client.insert(config, Tweet("takezoe", "Hello World!!"))
   client.insertJson(config, """{name: "takezoe", message: "Hello World!!"}""")
-  
+
   // Update
   client.update(config, "1", Tweet("takezoe", "Hello Scala!!"))
   client.updateJson(config, "1", """{name: "takezoe", message: "Hello World!!"}""")
@@ -48,12 +48,12 @@ elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its docum
 
 ## Code Generator
 
-elasticsearch4s-gen can generate source code from Elasticsearch schema json file.
+elastic-scala-gen can generate source code from Elasticsearch schema json file.
 
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elasticsearch4s-gen" % "0.0.6")
+addSbtPlugin("jp.co.bizreach" % "elastic-scala-gen" % "1.0.0")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
@@ -88,4 +88,4 @@ es-gen.ignore.properties=[
 ]
 ```
 
-See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elasticsearch4s-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
+See [ESCodegenConfig.scala](https://github.com/bizreach/elasticsearch4s/blob/master/elastic-scala-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
