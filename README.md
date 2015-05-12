@@ -1,4 +1,4 @@
-elastic-scala-httpclient   [![Build Status](https://secure.travis-ci.org/bizreach/elasticsearch4s.png?branch=master)](http://travis-ci.org/bizreach/elasticsearch4s)
+elastic-scala-httpclient   [![Build Status](https://secure.travis-ci.org/bizreach/elastic-scala-httpclient.png?branch=master)](http://travis-ci.org/bizreach/elastic-scala-httpclient)
 ===============
 
 Elasticsearch HTTP client for Scala with code generator.
