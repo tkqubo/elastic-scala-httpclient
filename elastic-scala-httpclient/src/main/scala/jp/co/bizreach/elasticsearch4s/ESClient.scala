@@ -222,6 +222,24 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
   }
 
   def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (String, T) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
+    @tailrec
+    def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Stream[R] = {
+      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m", body)
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      if(map.get("error").isDefined){
+        throw new RuntimeException(map("error").toString)
+      } else {
+        val scrollId = map("_scroll_id").toString
+        val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
+        list match {
+          case Nil  => stream
+          case list => scroll0(s"${url}/_search/scroll", scrollId,
+            list.map { map => invoker(map("_id").toString, getDocumentMap(map))
+            }.toStream #::: stream, invoker)
+        }
+      }
+    }
+
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName)
     config.typeName.foreach(x => searcher.setTypes(x))
@@ -231,6 +249,38 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty,
       (_id: String, map: Map[String, Any]) => p(_id, JsonUtils.deserialize[T](JsonUtils.serialize(map))))
   }
+
+  def scrollChunk[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (Seq[(String, T)]) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
+    @tailrec
+    def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: (Seq[(String, Map[String, Any])]) => R): Stream[R] = {
+      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m", body)
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      if(map.get("error").isDefined){
+        throw new RuntimeException(map("error").toString)
+      } else {
+        val scrollId = map("_scroll_id").toString
+        val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
+        list match {
+          case Nil  => stream
+          case list => scroll0(s"${url}/_search/scroll", scrollId,
+            Seq(invoker(list.map { map => (map("_id").toString, getDocumentMap(map)) })).toStream #::: stream, invoker)
+        }
+      }
+    }
+
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
+    f(searcher)
+    logger.debug(s"searchRequest:${searcher.toString}")
+
+    scroll0(config.url(url) + "/_search", searcher.toString, Stream.empty,
+      (maps: Seq[(String, Map[String, Any])]) => p(maps.map { case (id, map) =>
+        (id, JsonUtils.deserialize[T](JsonUtils.serialize(map)))
+      })
+    )
+  }
+
 
 //  def scrollAsMap[R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: Map[String, Any] => R)(implicit c: ClassTag[R]): Stream[R] = {
 //    logger.debug("******** ESConfig:" + config.toString)
@@ -246,24 +296,6 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("\n"))
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
-  }
-
-  @tailrec
-  private def scroll0[R](searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Stream[R] = {
-    val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m", body)
-    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-    if(map.get("error").isDefined){
-      throw new RuntimeException(map("error").toString)
-    } else {
-      val scrollId = map("_scroll_id").toString
-      val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
-      list match {
-        case Nil  => stream
-        case list => scroll0(s"${url}/_search/scroll", scrollId,
-          list.map { map => invoker(map("_id").toString, getDocumentMap(map))
-          }.toStream #::: stream, invoker)
-      }
-    }
   }
 
   def release() = {

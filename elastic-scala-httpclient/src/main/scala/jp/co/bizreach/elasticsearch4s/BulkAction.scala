@@ -38,10 +38,3 @@ object BulkAction {
   private def singleLine(str: String): String = str.replace("\n", "").replace("\r", "")
 
 }
-
-object BulkActionTest extends App {
-
-  println(BulkAction.Create(ESConfig("index", "type"), Map("aaa" -> "bbb")).jsonString)
-  println(BulkAction.Create(ESConfig("index", "type"), Map("aaa" -> "bbb"), Some("123")).jsonString)
-
-}
