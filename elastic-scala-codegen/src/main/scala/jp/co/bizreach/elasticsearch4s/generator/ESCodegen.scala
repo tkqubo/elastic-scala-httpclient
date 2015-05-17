@@ -7,7 +7,7 @@ object ESCodegen extends AutoPlugin {
   override def trigger = allRequirements
 
   object autoImport {
-    lazy val codegen = TaskKey[Unit]("es-gen")
+    lazy val codegen = TaskKey[Unit]("es-codegen")
   }
 
   import autoImport._

@@ -1,10 +1,10 @@
 sbtPlugin := true
 
-name := "elastic-scala-gen"
+name := "elastic-scala-codegen"
 
 organization := "jp.co.bizreach"
 
-version := "1.0.0"
+version := "1.0.1"
 
 scalaVersion := "2.10.3"
 
