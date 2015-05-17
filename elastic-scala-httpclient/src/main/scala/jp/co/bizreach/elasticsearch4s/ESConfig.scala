@@ -25,13 +25,6 @@ case class ESConfig(indexName: String, typeName: Option[String] = None, preferen
 
 object ESConfig {
 
-  def string2config(indexName: String) = ESConfig(indexName)
-  def tuple2config(tuple: (String, String)) = ESConfig(tuple._1, tuple._2)
-
-  implicit class ESStringConfig(indexName: String){
-    def / (typeName: String): ESConfig = ESConfig(indexName, typeName)
-  }
-
   /**
    * Creates ESConfig instance with index name and type name.
    */
