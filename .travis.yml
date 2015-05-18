@@ -1,5 +1,5 @@
 language: scala
 
 script:
-  - cd elasticsearch4s && sbt test
-  - cd $TRAVIS_BUILD_DIR/elasticsearch4s-gen && sbt test scripted
+  - cd elastic-scala-httpclient && sbt test
+  - cd $TRAVIS_BUILD_DIR/elastic-scala-codegen && sbt test scripted
