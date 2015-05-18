@@ -4,6 +4,8 @@ import org.elasticsearch.common.geo.builders.ShapeBuilder
 import org.elasticsearch.index.query._
 import org.elasticsearch.index.query.functionscore.ScoreFunctionBuilder
 
+import scala.reflect.ClassTag
+
 package object elasticsearch4s {
 
   def string2config(indexName: String) = ESConfig(indexName)
@@ -69,20 +71,38 @@ package object elasticsearch4s {
   def hasParentQuery(`type`: String, query: QueryBuilder) = QueryBuilders.hasParentQuery(`type`, query)
   def nestedQuery(path: String, query: QueryBuilder) = QueryBuilders.nestedQuery(path, query)
   def nestedQuery(path: String, filter: FilterBuilder) = QueryBuilders.nestedQuery(path, filter)
-  def termsQuery(name: String, values: String*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: Int*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: Long*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: Float*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: Double*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: AnyRef*) = QueryBuilders.termsQuery(name, values: _*)
-  def termsQuery(name: String, values: Seq[_]) = QueryBuilders.termsQuery(name, values: _*)
-  def inQuery(name: String, values: String*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: Int*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: Long*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: Float*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: Double*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: AnyRef*) = QueryBuilders.inQuery(name, values: _*)
-  def inQuery(name: String, values: Seq[_]) = QueryBuilders.inQuery(name, values: _*)
+  def termsQuery[T](name: String, values: T*)(implicit c: ClassTag[T]) = {
+    val clazz = c.runtimeClass
+    if(clazz == classOf[Int]) {
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[Int]]: _*)
+    } else if(clazz == classOf[Long]){
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[Long]]: _*)
+    } else if(clazz == classOf[Float]){
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[Float]]: _*)
+    } else if(clazz == classOf[Double]){
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[Double]]: _*)
+    } else if(clazz == classOf[String]){
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[String]]: _*)
+    } else {
+      QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[AnyRef]]: _*)
+    }
+  }
+  def inQuery[T](name: String, values: T*)(implicit c: ClassTag[T]) = {
+    val clazz = c.runtimeClass
+    if(clazz == classOf[Int]) {
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Int]]: _*)
+    } else if(clazz == classOf[Long]){
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Long]]: _*)
+    } else if(clazz == classOf[Float]){
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Float]]: _*)
+    } else if(clazz == classOf[Double]){
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Double]]: _*)
+    } else if(clazz == classOf[String]){
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[String]]: _*)
+    } else {
+      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[AnyRef]]: _*)
+    }
+  }
   def indicesQuery(queryBuilder: QueryBuilder, indices: String*) = QueryBuilders.indicesQuery(queryBuilder, indices: _*)
   def wrapperQuery(source: String) = QueryBuilders.wrapperQuery(source)
   def wrapperQuery(source: Array[Byte], offset: Int, length: Int) = QueryBuilders.wrapperQuery(source, offset, length)
@@ -90,3 +110,4 @@ package object elasticsearch4s {
   def geoShapeQuery(name: String, indexedShapeId: String, indexedShapeType: String) = QueryBuilders.geoShapeQuery(name, indexedShapeId, indexedShapeType)
 
 }
+
