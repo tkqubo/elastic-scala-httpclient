@@ -1,26 +1,40 @@
 package models
 import Person._
 
-case class Person(name1: Option[Name1], name2: Option[Name2])
+case class Person(
+  name1: Option[Name1], 
+  name2: Option[Name2]
+)
 
 object Person {
 
   val typeName = "person"
 
-  case class Name1(first1: Option[String], last1: Option[String])
-  case class Name2(first2: Option[String], last2: Option[String])
+  case class Name1(
+    first1: Option[String], 
+    last1: Option[String]
+  )
+  case class Name2(
+    first2: Option[String], 
+    last2: Option[String]
+  )
 
-  val name1 = Name1Names
-  object Name1Names {
-    val first1 = "name1.first1"
-    val last1 = "name1.last1"
-    override def toString() = "name1"
+  implicit val reflectiveCalls = scala.language.reflectiveCalls
+  implicit val implicitConversions = scala.language.implicitConversions
+
+  implicit def name2string(name: Name): String = name.toString()
+
+  case class Name(name: String){
+    lazy val key = if(name.contains(".")) name.split("\\.").last else name
+    override def toString(): String = name
   }
-  val name2 = Name2Names
-  object Name2Names {
-    val first2 = "name2.first2"
-    val last2 = "name2.last2"
-    override def toString() = "name2"
+  val name1 = new Name("name1"){
+    val first1 = Name("name1.first1")
+    val last1 = Name("name1.last1")
+  }
+  val name2 = new Name("name2"){
+    val first2 = Name("name2.first2")
+    val last2 = Name("name2.last2")
   }
 
 }

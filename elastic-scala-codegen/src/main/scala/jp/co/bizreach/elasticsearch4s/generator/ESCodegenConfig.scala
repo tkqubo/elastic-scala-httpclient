@@ -18,28 +18,28 @@ object ESCodegenConfig {
   def load(): ESCodegenConfig = {
     val config = ConfigFactory.parseFileAnySyntax(Paths.get("es-gen.conf").toFile)
     ESCodegenConfig(
-      outputDir       = if(config.hasPath("es-gen.output.dir")) config.getString("es-gen.output.dir") else "src/main/scala",
-      packageName     = if(config.hasPath("es-gen.package.name")) config.getString("es-gen.package.name") else "models",
-      jsonFiles       = if(config.hasPath("es-gen.json.files")) config.getStringList("es-gen.json.files").asScala.toSeq else Seq("schema.json"),
-      classMappings   = if(config.hasPath("es-gen.class.mappings")) config.getStringList("es-gen.class.mappings").asScala.map { x =>
+      outputDir       = if(config.hasPath("es-codegen.output.dir"))     config.getString("es-codegen.output.dir")   else "src/main/scala",
+      packageName     = if(config.hasPath("es-codegen.package.name"))   config.getString("es-codegen.package.name") else "models",
+      jsonFiles       = if(config.hasPath("es-codegen.json.files"))     config.getStringList("es-codegen.json.files").asScala.toSeq else Seq("schema.json"),
+      classMappings   = if(config.hasPath("es-codegen.class.mappings")) config.getStringList("es-codegen.class.mappings").asScala.map { x =>
         val array = x.split(":")
         val key   = array(0).trim
         val value = array(1).trim
         key -> value
       }.toMap else Map.empty,
-      typeMappings   = if(config.hasPath("es-gen.type.mappings")) config.getStringList("es-gen.type.mappings").asScala.map { x =>
+      typeMappings   = if(config.hasPath("es-codegen.type.mappings")) config.getStringList("es-codegen.type.mappings").asScala.map { x =>
         val array = x.split(":")
         val key   = array(0).trim
         val value = array(1).trim
         key -> value
       }.toMap else Map.empty,
-      arrayProperties = if(config.hasPath("es-gen.array.properties")) config.getStringList("es-gen.array.properties").asScala.map { x =>
+      arrayProperties = if(config.hasPath("es-codegen.array.properties")) config.getStringList("es-codegen.array.properties").asScala.map { x =>
         val array = x.split(":")
         val key   = array(0).trim
         val value = array(1).trim
         key -> value.split(",").map(_.trim).toSeq
       }.toMap else Map.empty,
-      ignoreProperties = if(config.hasPath("es-gen.ignore.properties")) config.getStringList("es-gen.ignore.properties").asScala.toSeq else Nil
+      ignoreProperties = if(config.hasPath("es-codegen.ignore.properties")) config.getStringList("es-codegen.ignore.properties").asScala.toSeq else Nil
     )
   }
 }
