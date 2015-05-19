@@ -1,36 +1,28 @@
 package jp.co.bizreach.elasticsearch4s
 
-import org.elasticsearch.action.bulk.BulkRequest
 import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import org.slf4j.LoggerFactory
 import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
 import scala.annotation.tailrec
-import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig, Realm}
+import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig}
 
 /**
  * Helper for accessing to Elasticsearch.
  */
 object ESClient {
 
-  val logger = LoggerFactory.getLogger(classOf[ESClient])
+  private val logger = LoggerFactory.getLogger(classOf[ESClient])
+  private var httpClient: AsyncHttpClient = null
 
   /**
    * This is the entry point of processing using ElasticSearch.
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
   def using[T](url: String)(f: ESClient => T): T = {
-    val httpClient: AsyncHttpClient =  Option(new java.net.URL(url).getUserInfo) match {
-      case Some(x) => {
-        val userInfo = x.split(":")
-        val realm = new Realm.RealmBuilder()
-          .setPrincipal(userInfo(0))
-          .setPassword(userInfo.lift(1).getOrElse(""))
-          .build()
-        HttpUtils.createHttpClient(new AsyncHttpClientConfig.Builder().setRealm(realm).build())
-      }
-      case _ => HttpUtils.createHttpClient()
+    if(httpClient == null){
+      throw new IllegalStateException("ESClient is not initialized.")
     }
     val client = new ESClient(new QueryBuilderClient(), httpClient, url)
     try {
@@ -39,6 +31,29 @@ object ESClient {
       client.release()
     }
   }
+
+  /**
+   * Initialize AsyncHttpClient. ESClient is available by calling this method.
+   */
+  def init(): Unit = {
+    httpClient = HttpUtils.createHttpClient()
+  }
+
+  /**
+   * Initialize AsyncHttpClient with given configuration. ESClient is available by calling this method.
+   */
+  def init(config: AsyncHttpClientConfig): Unit = {
+    httpClient = HttpUtils.createHttpClient(config)
+  }
+
+  /**
+   * Shutdown AsyncHttpClient. ESClient is disabled by calling this method.
+   */
+  def shutdown() = {
+    httpClient.close()
+    httpClient = null
+  }
+
 }
 
 class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String) {
@@ -299,7 +314,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 
   def release() = {
     queryClient.close()
-    httpClient.close()
+//    httpClient.close()
   }
 
   private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = {
