@@ -307,7 +307,7 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
 //  }
 
   def bulk[T](actions: Seq[BulkAction]): Either[Map[String, Any], Map[String, Any]] = {
-    val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("\n"))
+    val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("", "\n", "\n"))
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
