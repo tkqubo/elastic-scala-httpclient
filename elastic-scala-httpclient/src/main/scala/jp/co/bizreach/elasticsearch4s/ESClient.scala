@@ -21,14 +21,12 @@ object ESClient {
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
   def using[T](url: String)(f: ESClient => T): T = {
-    if(httpClient == null){
-      throw new IllegalStateException("ESClient is not initialized.")
-    }
-    val client = new ESClient(new QueryBuilderClient(), httpClient, url)
+    val httpClient = new AsyncHttpClient()
+    val client = new ESClient(httpClient, url)
     try {
       f(client)
     } finally {
-      client.release()
+      httpClient.close()
     }
   }
 
@@ -37,6 +35,16 @@ object ESClient {
    */
   def init(): Unit = {
     httpClient = HttpUtils.createHttpClient()
+  }
+
+  /**
+   * Return ESClient instance.
+   */
+  def apply(url: String): ESClient = {
+    if(httpClient == null){
+      throw new IllegalStateException("ESClient has not been initialized.")
+    }
+    new ESClient(httpClient, url)
   }
 
   /**
@@ -56,7 +64,9 @@ object ESClient {
 
 }
 
-class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String) {
+class ESClient(httpClient: AsyncHttpClient, url: String) {
+
+  private val queryClient = new QueryBuilderClient()
 
   def insertJson(config: ESConfig, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"insertJson:\n${json}")
@@ -310,11 +320,6 @@ class ESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: St
     val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("", "\n", "\n"))
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
-  }
-
-  def release() = {
-    queryClient.close()
-//    httpClient.close()
   }
 
   private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = {
