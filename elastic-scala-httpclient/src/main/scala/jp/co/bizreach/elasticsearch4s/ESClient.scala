@@ -336,7 +336,9 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
       total,
       took,
       hits.map { hit =>
-        ESSearchResultItem(hit("_id").toString,
+        ESSearchResultItem(
+          hit("_id").asInstanceOf[String],
+          hit("_score").asInstanceOf[Double],
           JsonUtils.deserialize[T](JsonUtils.serialize(getDocumentMap(hit))),
           hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
         )

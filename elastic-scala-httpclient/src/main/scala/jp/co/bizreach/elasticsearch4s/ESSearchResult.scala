@@ -11,6 +11,7 @@ case class ESSearchResult[T](
 
 case class ESSearchResultItem[T](
   id: String,
+  score: Double,
   doc: T,
   highlightFields: Map[String, List[String]]
 )
