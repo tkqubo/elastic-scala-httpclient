@@ -172,7 +172,7 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
     )
     logger.debug(s"searchRequest:${json}")
 
-    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_search/template" + options.getOrElse("")), json)
+    val resultJson = HttpUtils.post(httpClient, config.urlWithParameters(url, "_search/template" + options.getOrElse("")), json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -340,7 +340,8 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
           hit("_id").asInstanceOf[String],
           hit("_score").asInstanceOf[Double],
           JsonUtils.deserialize[T](JsonUtils.serialize(getDocumentMap(hit))),
-          hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty)
+          hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty),
+          hit.get("_explanation").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty)
         )
       }.toList,
       x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty),
