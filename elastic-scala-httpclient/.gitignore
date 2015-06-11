@@ -16,3 +16,4 @@ bin
 /.project
 /RUNNING_PID
 /.settings
+.ensime*
