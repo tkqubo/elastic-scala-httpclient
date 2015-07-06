@@ -8,7 +8,7 @@ Elasticsearch HTTP client for Scala with code generator.
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "1.0.1"
+libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "1.0.2"
 ```
 
 You can access Elasticsearch via HTTP Rest API as following:
@@ -18,8 +18,11 @@ case class Tweet(name: String, message: String)
 
 import jp.co.bizreach.elasticsearch4s._
 
+// Call this method once at first
+ESClient.init()
+
 ESClient.using("http://localhost:9200"){ client =>
-  val config = ESConfig("twitter", "tweet")
+  val config = ESConfig("twitter" / "tweet")
 
   // Insert
   client.insert(config, Tweet("takezoe", "Hello World!!"))
@@ -33,59 +36,62 @@ ESClient.using("http://localhost:9200"){ client =>
   client.delete(config, "1")
 
   // Find one document
-  val tweet: Option[(String, Tweet)] = client.find[Tweet](config){ seacher =>
-    seacher.setQuery(QueryBuilders.termQuery("_id", "1"))
+  val tweet: Option[(String, Tweet)] = client.find[Tweet](config){ searcher =>
+    searcher.setQuery(termQuery("_id", "1"))
   }
 
   // Search documents
-  val list: List[ESSearchResult] = client.list[Tweet](config){ seacher =>
-    seacher.setQuery(QueryBuilders.termQuery("name", "takezoe"))
+  val list: List[ESSearchResult] = client.list[Tweet](config){ searcher =>
+    searcher.setQuery(termQuery("name", "takezoe"))
   }
 }
+
+// Call this method to shutdown AsyncHttpClient
+ESClient.shutdown()
 ```
 
 elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its document]( http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/) to know details, especially how to build query.
 
 ## Code Generator
 
-elastic-scala-gen can generate source code from Elasticsearch schema json file.
+elastic-scala-codegen can generate source code from Elasticsearch schema json file.
 
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elastic-scala-gen" % "1.0.0")
+addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.1")
 ```
 
-Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-gen`. Source code will be generated into `src/main/scala/models`.
+Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-codegen`. Source code will be generated into `src/main/scala/models`.
 
-You can configure generation settings in `PROJECT_ROOT/es-gen.conf`. Here is a configuration example:
+You can configure generation settings in `PROJECT_ROOT/es-codegen.conf`. Here is a configuration example:
 
 ```properties
 # package name
-es-gen.package.name=models
+es-codegen.package.name=models
 # schema definition files
-es-gen.json.files=[
+es-codegen.json.files=[
   "./schema/book_master.json",
   "./schema/book_search.json"
 ]
 # map same index name to different classes
-es-gen.class.mappings=[
+es-codegen.class.mappings=[
   "book_master.json#book:BookMaster",
   "book_search.json#book:BookSearch"
 ]
 # map unknown type
-es-gen.type.mappings=[
+es-codegen.type.mappings=[
   "minhash:String"
 ]
 # specify array properties
-es-gen.array.properties=[
+es-codegen.array.properties=[
   "BookMaster.author",
   "BookSearch.author"
 ]
 # specify ignore properties
-es-gen.ignore.properties=[
+es-codegen.ignore.properties=[
   "internalCode"
 ]
 ```
 
-See [ESCodegenConfig.scala](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-gen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
+See [ESCodegenConfig.scala](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-codegen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.
