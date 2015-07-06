@@ -1,6 +1,6 @@
 package jp.co.bizreach.elasticsearch4s
 
-case class ESConfig(indexName: String, typeName: Option[String] = None, preference: Option[String] = None, explain: Boolean = false){
+case class ESConfig(indexName: String, typeName: Option[String] = None, preference: Option[String] = None, explain: Boolean = false, timeout: Option[Int] = None){
 
   /**
    * Returns the index URL.
@@ -26,14 +26,20 @@ case class ESConfig(indexName: String, typeName: Option[String] = None, preferen
    */
   def urlWithParameters(baseUrl: String, path: String) = {
     val u = url(baseUrl) + "/" + path
-    val ur = u + preference.map { x =>
+
+    val u2 = u + preference.map { x =>
       (if(u.indexOf('?') >= 0) "&" else "?") + "preference=" + x
     }.getOrElse("")
-    if(explain) {
-      ur + (if(ur.indexOf('?') >= 0) "&" else "?") + "explain=true"
+
+    val u3 = if(explain) {
+      u2 + (if(u2.indexOf('?') >= 0) "&" else "?") + "explain=true"
     } else {
-      ur
+      u2
     }
+
+    u3 + timeout.map { x =>
+      (if(u3.indexOf('?') >= 0) "&" else "?") + "timeout=" + x
+    }.getOrElse("")
   }
 }
 
@@ -53,5 +59,10 @@ object ESConfig {
    * Creates ESConfig instance with index name, type name, preference and explain.
    */
   def apply(indexName: String, typeName: String, preference: String, explain: Boolean): ESConfig = ESConfig(indexName, Some(typeName), Some(preference), explain)
+
+  /**
+   * Creates ESConfig instance with index name, type name, preference, explain and timeout.
+   */
+  def apply(indexName: String, typeName: String, preference: String, explain: Boolean, timeout: Int): ESConfig = ESConfig(indexName, Some(typeName), Some(preference), explain, Some(timeout))
 
 }
