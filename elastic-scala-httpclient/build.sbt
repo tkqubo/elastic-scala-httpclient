@@ -36,7 +36,7 @@ publishArtifact in Test := false
 pomIncludeRepository := { _ => false }
 
 pomExtra := (
-  <url>https://github.com/bizreach/elasticsearch4s</url>
+  <url>https://github.com/bizreach/elastic-scala-httpclient</url>
     <licenses>
       <license>
         <name>The Apache Software License, Version 2.0</name>
@@ -44,14 +44,32 @@ pomExtra := (
       </license>
     </licenses>
     <scm>
-      <url>https://github.com/bizreach/elasticsearch4s</url>
-      <connection>scm:git:https://github.com/bizreach/elasticsearch4s.git</connection>
+      <url>https://github.com/bizreach/elastic-scala-httpclient</url>
+      <connection>scm:git:https://github.com/bizreach/elastic-scala-httpclient.git</connection>
     </scm>
     <developers>
       <developer>
         <id>takezoe</id>
         <name>Naoki Takezoe</name>
         <email>naoki.takezoe_at_bizreach.co.jp</email>
+        <timezone>+9</timezone>
+      </developer>
+      <developer>
+        <id>hajimeni</id>
+        <name>Hajime Nishiyama</name>
+        <email>nishiyama_at_bizreach.co.jp</email>
+        <timezone>+9</timezone>
+      </developer>
+      <developer>
+        <id>saito400</id>
+        <name>Kenichi Saito</name>
+        <email>kenichi.saito_at_bizreach.co.jp</email>
+        <timezone>+9</timezone>
+      </developer>
+      <developer>
+        <id>shimamoto</id>
+        <name>Takako Shimamoto</name>
+        <email>takako.shimamoto_at_bizreach.co.jp</email>
         <timezone>+9</timezone>
       </developer>
     </developers>)
