@@ -228,5 +228,13 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
 
   // TODO scroll
   // TODO scrollChunk
-  // TODO bulk
+
+  def bulkAsync[T](actions: Seq[BulkAction]): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    val future = HttpUtils.postAsync(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("", "\n", "\n"))
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
 }
