@@ -2,6 +2,7 @@ package jp.co.bizreach.elasticsearch4s
 
 import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
+import ESUtils._
 import org.slf4j.LoggerFactory
 import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
@@ -320,49 +321,6 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
     val resultJson = HttpUtils.post(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("", "\n", "\n"))
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
-  }
-
-  private def getDocumentMap(hit: Map[String, Any]): Map[String, Any] = {
-    hit.get("_source").map(_.asInstanceOf[Map[String, Any]])
-      .getOrElse(structuredMap(hit("fields").asInstanceOf[Map[String, Any]]))
-  }
-
-  private def createESSearchResult[T](x: Map[String, Any])(implicit c: ClassTag[T]): ESSearchResult[T] = {
-    val total = x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
-    val took  = x("took").asInstanceOf[Int]
-    val hits  = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
-
-    ESSearchResult(
-      total,
-      took,
-      hits.map { hit =>
-        ESSearchResultItem(
-          hit("_id").asInstanceOf[String],
-          hit("_score").asInstanceOf[Double],
-          JsonUtils.deserialize[T](JsonUtils.serialize(getDocumentMap(hit))),
-          hit.get("highlight").asInstanceOf[Option[Map[String, List[String]]]].getOrElse(Map.empty),
-          hit.get("_explanation").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty)
-        )
-      }.toList,
-      x.get("facets").asInstanceOf[Option[Map[String, Map[String, Any]]]].getOrElse(Map.empty),
-      x.get("aggregations").asInstanceOf[Option[Map[String, Any]]].getOrElse(Map.empty),
-      x
-    )
-  }
-
-  private def structuredMap(map: Map[String, Any]): Map[String, Any] = {
-    def structuredMap0(group: List[(List[String], Any)]): Any = {
-      group.groupBy { case (key, value) => key.head }.map { case (key, value) =>
-        key -> (if(value.head._1.length == 1){
-          value.head._2
-        } else {
-          structuredMap0(value.map { case (key, value) => key.tail -> value })
-        })
-      }
-    }
-
-    val list = map.map { case (key, value) => key.split("\\.").toList -> value }.toList
-    structuredMap0(list).asInstanceOf[Map[String, Any]]
   }
 
 }
