@@ -18,11 +18,8 @@ case class Tweet(name: String, message: String)
 
 import jp.co.bizreach.elasticsearch4s._
 
-// Call this method once at first
-ESClient.init()
-
 ESClient.using("http://localhost:9200"){ client =>
-  val config = ESConfig("twitter" / "tweet")
+  val config = "twitter" / "tweet"
 
   // Insert
   client.insert(config, Tweet("takezoe", "Hello World!!"))
@@ -45,10 +42,24 @@ ESClient.using("http://localhost:9200"){ client =>
     searcher.setQuery(termQuery("name", "takezoe"))
   }
 }
+```
 
-// Call this method to shutdown AsyncHttpClient
+If you have to recycle `ESClient` instance, you can manage lyfecycle of `ESClient` manually.
+
+```scala
+// Call this method once before using ESClient
+ESClient.init()
+
+val client = ESClient(""http://localhost:9200"")
+val config = "twitter" / "tweet"
+
+client.insert(config, Tweet("takezoe", "Hello World!!"))
+
+// Call this method before shutting down application
 ESClient.shutdown()
 ```
+
+[AsyncESClient](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-httpclient/src/main/scala/jp/co/bizreach/elasticsearch4s/AsyncESClient.scala) that is an asynchrnous version of ESClient is also available. All methods of `AsyncESClient` returns `Future`.
 
 elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its document]( http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/) to know details, especially how to build query.
 
