@@ -5,17 +5,32 @@ import org.elasticsearch.action.search.SearchRequestBuilder
 import org.slf4j.LoggerFactory
 import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
-import scala.annotation.tailrec
 import com.ning.http.client.AsyncHttpClient
 import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object AsyncESClient {
-  private val httpClient = HttpUtils.createHttpClient()
+  private var httpClient: AsyncHttpClient = null
 
-  def using[T](url: String)(f: AsyncESClient => T): T = {
-    val client = new AsyncESClient(new QueryBuilderClient(), HttpUtils.createHttpClient(), url)
-    f(client)
+  def using[T](url: String)(f: AsyncESClient => Future[T]): Future[T] = {
+    val httpClient = HttpUtils.createHttpClient()
+    val client = new AsyncESClient(new QueryBuilderClient(), httpClient, url)
+    val future = f(client)
+    future.onComplete { case t =>
+      httpClient.close()
+    }
+    future
+  }
+
+  def apply(url: String): AsyncESClient = {
+    if(httpClient == null){
+      throw new IllegalStateException("AsyncHttpClient has not been initialized. Call AsyncESClient.init() at first.")
+    }
+    new AsyncESClient(new QueryBuilderClient(), httpClient, url)
+  }
+
+  def init() = {
+    httpClient = HttpUtils.createHttpClient()
   }
 
   def shutdown() = {
@@ -80,7 +95,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
   def findAsync[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): Future[Option[(String, T)]] = {
     searchAsync(config)(f).map { result =>
       result match {
-        case Left(x)  => throw new RuntimeException(x("error").toString) // TODO Call error handler instead of throwing exception
+        case Left(x)  => throw new RuntimeException(x("error").toString)
         case Right(x) => {
           val hits = x("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[Seq[Map[String, Any]]]
           if(hits.length == 0){
@@ -96,7 +111,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
   def findAsListAsync[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): Future[List[(String, T)]] = {
     searchAsync(config)(f).map { result =>
       result match {
-        case Left(x)  => throw new RuntimeException(x("error").toString) // TODO Call error handler instead of throwing exception
+        case Left(x)  => throw new RuntimeException(x("error").toString)
         case Right(x) => createESSearchResult(x).list.map { x => (x.id, x.doc) }
       }
     }
@@ -115,7 +130,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
   def listAsync[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): Future[ESSearchResult[T]] = {
     searchAsync(config)(f).map { result =>
       result match {
-        case Left(x)  => throw new RuntimeException(x("error").toString) // TODO Call error handler instead of throwing exception
+        case Left(x)  => throw new RuntimeException(x("error").toString)
         case Right(x) => createESSearchResult(x)
       }
     }
@@ -226,8 +241,66 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     }
   }
 
-  // TODO scroll
-  // TODO scrollChunk
+  def scrollAsync[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (String, T) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Future[Stream[R]] = {
+    def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Future[Stream[R]] = {
+      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      future.flatMap { resultJson =>
+        val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+        if(map.get("error").isDefined){
+          throw new RuntimeException(map("error").toString)
+        } else {
+          val scrollId = map("_scroll_id").toString
+          val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
+          list match {
+            case Nil if init == false => Future(stream)
+            case Nil  => scroll0(false, s"${url}/_search/scroll", scrollId, stream, invoker)
+            case list => scroll0(false, s"${url}/_search/scroll", scrollId, list.map { map => invoker(map("_id").toString, getDocumentMap(map)) }.toStream #::: stream, invoker)
+          }
+        }
+      }
+    }
+
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
+    f(searcher)
+    logger.debug(s"searchRequest:${searcher.toString}")
+
+    scroll0(true, config.url(url) + "/_search", searcher.toString, Stream.empty,
+      (_id: String, map: Map[String, Any]) => p(_id, JsonUtils.deserialize[T](JsonUtils.serialize(map))))
+  }
+
+  def scrollChunkAsync[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (Seq[(String, T)]) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Future[Stream[R]] = {
+    def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (Seq[(String, Map[String, Any])]) => R): Future[Stream[R]] = {
+      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      future.flatMap { resultJson =>
+        val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+        if(map.get("error").isDefined){
+          throw new RuntimeException(map("error").toString)
+        } else {
+          val scrollId = map("_scroll_id").toString
+          val list = map("hits").asInstanceOf[Map[String, Any]]("hits").asInstanceOf[List[Map[String, Any]]]
+          list match {
+            case Nil if init == false => Future(stream)
+            case Nil  => scroll0(false, s"${url}/_search/scroll", scrollId, stream, invoker)
+            case list => scroll0(false, s"${url}/_search/scroll", scrollId, Seq(invoker(list.map { map => (map("_id").toString, getDocumentMap(map)) })).toStream #::: stream, invoker)
+          }
+        }
+      }
+    }
+
+    logger.debug("******** ESConfig:" + config.toString)
+    val searcher = queryClient.prepareSearch(config.indexName)
+    config.typeName.foreach(x => searcher.setTypes(x))
+    f(searcher)
+    logger.debug(s"searchRequest:${searcher.toString}")
+
+    scroll0(true, config.url(url) + "/_search", searcher.toString, Stream.empty,
+      (maps: Seq[(String, Map[String, Any])]) => p(maps.map { case (id, map) =>
+        (id, JsonUtils.deserialize[T](JsonUtils.serialize(map)))
+      })
+    )
+  }
 
   def bulkAsync[T](actions: Seq[BulkAction]): Future[Either[Map[String, Any], Map[String, Any]]] = {
     val future = HttpUtils.postAsync(httpClient, s"${url}/_bulk", actions.map(_.jsonString).mkString("", "\n", "\n"))

@@ -4,7 +4,6 @@ import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import ESUtils._
 import org.slf4j.LoggerFactory
-import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
 import scala.annotation.tailrec
 import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig}
@@ -43,7 +42,7 @@ object ESClient {
    */
   def apply(url: String): ESClient = {
     if(httpClient == null){
-      throw new IllegalStateException("ESClient has not been initialized.")
+      throw new IllegalStateException("AsyncHttpClient has not been initialized. Call ESClient.init() at first.")
     }
     new ESClient(httpClient, url)
   }
