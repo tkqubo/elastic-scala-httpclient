@@ -12,7 +12,7 @@ libraryDependencies <++= scalaVersion(sv => Seq(
   "joda-time"                    %  "joda-time"             % "2.2",
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
-  "com.ning"                     %  "async-http-client"     % "1.8.15",
+  "com.ning"                     %  "async-http-client"     % "1.9.29",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.5.3",
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 ))
