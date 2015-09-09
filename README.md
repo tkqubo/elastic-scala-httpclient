@@ -79,22 +79,22 @@ You can configure generation settings in `PROJECT_ROOT/es-codegen.json`. Here is
 
 ```json
 {
-  outputDir: "sec/main/scala",
-  mappings: [
+  "outputDir": "sec/main/scala",
+  "mappings": [
     {
-	  path: "schemas/book.json",
-	  packageName: "jp.co.bizreach",
-	  className: "Book",
-	  arrayProperties: [
+	  "path": "schemas/book.json",
+	  "packageName": "jp.co.bizreach",
+	  "className": "Book",
+	  "arrayProperties": [
 	    "author"
 	  ],
-	  ignoreProperties: [
+	  "ignoreProperties": [
 	    "internalCode"
 	  ]
 	}
   ],
-  typeMappings: {
-    minhash: "String"
+  "typeMappings": {
+    "minhash": "String"
   }
 }
 ```
