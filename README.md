@@ -77,7 +77,7 @@ Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execut
 
 You can configure generation settings in `PROJECT_ROOT/es-codegen.json`. Here is a configuration example:
 
-```properties
+```json
 {
   outputDir: "sec/main/scala",
   mappings: [
