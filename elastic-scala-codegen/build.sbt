@@ -9,7 +9,6 @@ version := "1.0.2"
 scalaVersion := "2.10.3"
 
 libraryDependencies ++= Seq(
-  "com.typesafe" %  "config"         % "1.2.1",
   "commons-io"   %  "commons-io"     % "2.4",
   "org.json4s"   %% "json4s-jackson" % "3.2.10"
 )
