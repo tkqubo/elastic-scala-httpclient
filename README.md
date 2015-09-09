@@ -70,39 +70,33 @@ elastic-scala-codegen can generate source code from Elasticsearch schema json fi
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.1")
+addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.2")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-codegen`. Source code will be generated into `src/main/scala/models`.
 
-You can configure generation settings in `PROJECT_ROOT/es-codegen.conf`. Here is a configuration example:
+You can configure generation settings in `PROJECT_ROOT/es-codegen.json`. Here is a configuration example:
 
 ```properties
-# package name
-es-codegen.package.name=models
-# schema definition files
-es-codegen.json.files=[
-  "./schema/book_master.json",
-  "./schema/book_search.json"
-]
-# map same index name to different classes
-es-codegen.class.mappings=[
-  "book_master.json#book:BookMaster",
-  "book_search.json#book:BookSearch"
-]
-# map unknown type
-es-codegen.type.mappings=[
-  "minhash:String"
-]
-# specify array properties
-es-codegen.array.properties=[
-  "BookMaster.author",
-  "BookSearch.author"
-]
-# specify ignore properties
-es-codegen.ignore.properties=[
-  "internalCode"
-]
+{
+  outputDir: "sec/main/scala",
+  mappings: [
+    {
+	  path: "schemas/book.json",
+	  packageName: "jp.co.bizreach",
+	  className: "Book",
+	  arrayProperties: [
+	    "author"
+	  ],
+	  ignoreProperties: [
+	    "internalCode"
+	  ]
+	}
+  ],
+  typeMappings: {
+    minhash: "String"
+  }
+}
 ```
 
 See [ESCodegenConfig.scala](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-codegen/src/main/scala/jp/co/bizreach/elasticsearch4s/generator/ESCodegenConfig.scala) to know configuration details.

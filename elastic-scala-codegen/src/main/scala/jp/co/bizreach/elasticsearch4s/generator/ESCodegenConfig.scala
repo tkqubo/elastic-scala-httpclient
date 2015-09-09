@@ -25,7 +25,7 @@ object ESCodegenConfig {
   implicit val jsonFormats = DefaultFormats
 
   def load(): ESCodegenConfig = {
-    val json = IOUtils.toString(new FileInputStream(Paths.get("es-gen.conf").toFile), "UTF-8")
+    val json = IOUtils.toString(new FileInputStream(Paths.get("es-codegen.json").toFile), "UTF-8")
     parse(json).extract[ESCodegenConfig]
   }
 }
