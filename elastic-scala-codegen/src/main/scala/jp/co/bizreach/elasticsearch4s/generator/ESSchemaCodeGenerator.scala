@@ -151,6 +151,7 @@ object ESSchemaCodeGenerator {
                 case "date" if(value("format").toString == "dateOptionalTime") => "org.joda.time.DateTime"
                 //case "date" if(value("format").toString.startsWith("yyyy/MM/dd||"))  => "org.joda.time.LocalDate"
                 case "long"      => "Long"
+                case "double"    => "Double"
                 case "string"    => "String"
                 case "boolean"   => "Boolean"
                 case "geo_point" => "GeoPoint"
