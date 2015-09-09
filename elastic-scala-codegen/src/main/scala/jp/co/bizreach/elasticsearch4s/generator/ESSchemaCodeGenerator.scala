@@ -28,21 +28,22 @@ object ESSchemaCodeGenerator {
             val sb = new StringBuilder()
             val head = classInfoList.head
             val tail = classInfoList.tail
+            val packageName = config.packageName + (if(head.packageName.nonEmpty) "." + head.packageName else "")
 
-            sb.append(s"package ${config.packageName}\n")
-            sb.append(s"import ${head.name}._\n")
+            sb.append(s"package ${packageName}\n")
+            sb.append(s"import ${head.className}._\n")
             sb.append("\n")
             sb.append(generateSource("", head))
             sb.append("\n")
-            sb.append(s"object ${head.name} {\n")
+            sb.append(s"object ${head.className} {\n")
             sb.append("\n")
-            sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
+            sb.append(s"""  val typeName = "${toLowerCamel(head.className)}"\n""")
             sb.append("\n")
             tail.foreach { classInfo =>
               sb.append(generateSource("  ", classInfo))
             }
             if(tail.exists(x => x.props.exists(_.rawTypeName == "GeoPoint"))){
-              sb.append(generateSource("  ", ClassInfo("GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
+              sb.append(generateSource("  ", ClassInfo("", "GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
             }
             sb.append("\n")
 
@@ -62,7 +63,7 @@ object ESSchemaCodeGenerator {
             sb.append("\n")
             sb.append("}")
 
-            val file = new java.io.File(s"${config.outputDir}/${config.packageName.replace('.', '/')}/${head.name}.scala")
+            val file = new java.io.File(s"${config.outputDir}/${packageName.replace('.', '/')}/${head.className}.scala")
             FileUtils.write(file, sb.toString, "UTF-8")
           }
         }
@@ -73,14 +74,14 @@ object ESSchemaCodeGenerator {
 
   private def generateNames(indent: String, prefix: String, prop: PropInfo, classes: List[ClassInfo]): String = {
     val sb = new StringBuilder()
-    if(classes.exists(_.name == prop.rawTypeName)){
+    if(classes.exists(_.className == prop.rawTypeName)){
       if(isValidIdentifier(prop.name)){
         sb.append(s"""${indent}val ${prop.name} = new Name("${prefix}${prop.name}"){""")
       } else {
         sb.append(s"""${indent}val `${prop.name}` = new Name("${prefix}${prop.name}"){""")
       }
       sb.append("\n")
-      classes.find(_.name == prop.rawTypeName).get.props.foreach { child =>
+      classes.find(_.className == prop.rawTypeName).get.props.foreach { child =>
         sb.append(generateNames(indent + "  ", prefix + prop.name + ".", child, classes))
       }
       sb.append(s"${indent}}\n")
@@ -102,8 +103,10 @@ object ESSchemaCodeGenerator {
 
   private def extractClassInfo(file: File, config: ESCodegenConfig, key: String, props: Map[String, _], classes: List[ClassInfo] = Nil): List[ClassInfo] = {
     val name = config.classMappings.get(key).orElse(config.classMappings.get(file.getName + "#" + key)).getOrElse(toUpperCamel(key))
+    val i = name.indexOf('.')
+    val (packageName, className) = if(i > 0) (name.substring(0, i), name.substring(i + 1)) else ("", name)
 
-    ClassInfo(file, config, name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
+    ClassInfo(file, config, packageName, className, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
       if(value.contains("properties")){
         Some(extractClassInfo(file, config, key, value("properties").asInstanceOf[Map[String, _]]))
       } else {
@@ -115,13 +118,13 @@ object ESSchemaCodeGenerator {
   private def generateSource(indent: String, classInfo: ClassInfo): String = {
     val sb = new StringBuilder()
     if(classInfo.props.length > 22){
-      sb.append(indent + s"class ${classInfo.name}(\n")
+      sb.append(indent + s"class ${classInfo.className}(\n")
       sb.append(classInfo.props.map { propInfo =>
         indent + s"  val ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
       }.mkString("", ", \n", "\n"))
       sb.append(indent + ")\n")
     } else {
-      sb.append(indent + s"case class ${classInfo.name}(\n")
+      sb.append(indent + s"case class ${classInfo.className}(\n")
       sb.append(classInfo.props.map { propInfo =>
          indent+ s"  ${if(isValidIdentifier(propInfo.name)) propInfo.name else s"`${propInfo.name}`"}: ${propInfo.typeName}"
       }.mkString("", ", \n", "\n"))
@@ -131,12 +134,13 @@ object ESSchemaCodeGenerator {
   }
 
 
-  case class ClassInfo(name: String, props: List[PropInfo])
+  case class ClassInfo(packageName: String, className: String, props: List[PropInfo])
 
   object ClassInfo {
-    def apply(file: File, config: ESCodegenConfig, name: String, props: Map[String, _]): ClassInfo = {
+    def apply(file: File, config: ESCodegenConfig, packageName: String, className: String, props: Map[String, _]): ClassInfo = {
       ClassInfo(
-        name,
+        packageName,
+        className,
         props
           .filter { case (key: String, value: Map[String, _] @unchecked) =>
             !config.ignoreProperties.contains(key) && !config.ignoreProperties.contains(file.getName + "#" + key)
@@ -156,8 +160,8 @@ object ESSchemaCodeGenerator {
               toUpperCamel(key)
             }
 
-            val arrayType = if(config.arrayProperties.get(name).orElse(
-              config.arrayProperties.get(file.getName + "#" + name)).exists(_.contains(key))){
+            val arrayType = if(config.arrayProperties.get(className).orElse(
+              config.arrayProperties.get(file.getName + "#" + className)).exists(_.contains(key))){
               s"Array[${typeName}]"
             } else {
               typeName
