@@ -1,23 +1,23 @@
 package jp.co.bizreach.elasticsearch4s.generator
 
-import java.io.FileInputStream
-import org.apache.commons.io.IOUtils
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import java.nio.file.Paths
+import Utils._
 
 import org.json4s._
-import org.json4s.jackson.JsonMethods._
 
 case class ESCodegenConfig(
-  outputDir: String = "src/main/scala",
-  mappings: Seq[Mapping] = Nil,
-  typeMappings: Map[String, String] = Map.empty
+  outputDir: Option[String],
+  mappings: Seq[Mapping],
+  typeMappings: Option[Map[String, String]]
 )
 
 case class Mapping(
-  path: String = "schema.json",
-  packageName: String = "models",
-  arrayProperties: Seq[String] = Nil,
-  ignoreProperties: Seq[String] = Nil,
+  path: String,
+  packageName: String,
+  arrayProperties: Option[Seq[String]],
+  ignoreProperties: Option[Seq[String]],
   className: Option[String]
 )
 
@@ -25,7 +25,10 @@ object ESCodegenConfig {
   implicit val jsonFormats = DefaultFormats
 
   def load(): ESCodegenConfig = {
-    val json = IOUtils.toString(new FileInputStream(Paths.get("es-codegen.json").toFile), "UTF-8")
-    parse(json).extract[ESCodegenConfig]
+    val json = read(Paths.get("es-codegen.json").toFile)
+
+    val mapper = new ObjectMapper()
+    mapper.registerModule(DefaultScalaModule)
+    mapper.readValue(json, classOf[ESCodegenConfig])
   }
 }

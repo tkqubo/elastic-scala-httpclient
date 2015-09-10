@@ -1,9 +1,9 @@
 package jp.co.bizreach.elasticsearch4s.generator
 
-import org.apache.commons.io.{FileUtils, IOUtils}
-import java.io.{File, FileInputStream}
+import java.io.File
 import org.json4s._
 import org.json4s.jackson.JsonMethods._
+import Utils._
 
 object ESSchemaCodeGenerator {
 
@@ -20,7 +20,7 @@ object ESSchemaCodeGenerator {
         case mappings: JObject => {
           val schemaInfoList = mappings.values.map { case (key: String, value: Map[String, _] @unchecked) =>
             val props = value("properties").asInstanceOf[Map[String, _]]
-            extractClassInfo(mapping, config, key, props)
+            extractClassInfo(mapping, config, key, props, true)
           }
 
           schemaInfoList.foreach { classInfoList =>
@@ -61,8 +61,9 @@ object ESSchemaCodeGenerator {
             sb.append("\n")
             sb.append("}")
 
-            val file = new java.io.File(s"${config.outputDir}/${mapping.packageName.replace('.', '/')}/${head.name}.scala")
-            FileUtils.write(file, sb.toString, "UTF-8")
+            val outputDir = config.outputDir.getOrElse("src/main/scala")
+            val file = new java.io.File(s"${outputDir}/${mapping.packageName.replace('.', '/')}/${head.name}.scala")
+            write(file, sb.toString)
           }
         }
         case  _ =>
@@ -95,18 +96,15 @@ object ESSchemaCodeGenerator {
 
   case class Name(name: String)
 
-  private def read(file: File): String = IOUtils.toString(new FileInputStream(file), "UTF-8")
-
   private def isValidIdentifier(name: String): Boolean = !name.matches("^[0-9].*")
 
-  private def extractClassInfo(mapping: Mapping, config: ESCodegenConfig, key: String, props: Map[String, _],
-                               classes: List[ClassInfo] = Nil): List[ClassInfo] = {
+  private def extractClassInfo(mapping: Mapping, config: ESCodegenConfig, key: String, props: Map[String, _], topLevel: Boolean): List[ClassInfo] = {
 
-    val name = mapping.className.getOrElse(toUpperCamel(key))
+    val name = if(topLevel) mapping.className.getOrElse(toUpperCamel(key)) else toUpperCamel(key)
 
     ClassInfo(mapping, config, name, props) :: props.flatMap { case (key: String, value: Map[String, _] @unchecked) =>
       if(value.contains("properties")){
-        Some(extractClassInfo(mapping, config, key, value("properties").asInstanceOf[Map[String, _]]))
+        Some(extractClassInfo(mapping, config, key, value("properties").asInstanceOf[Map[String, _]], false))
       } else {
         None
       }
@@ -140,7 +138,7 @@ object ESSchemaCodeGenerator {
         name,
         props
           .filter { case (key: String, value: Map[String, _] @unchecked) =>
-            !mapping.ignoreProperties.contains(key)
+            !mapping.ignoreProperties.exists(_.contains(key))
           }
           .map { case (key: String, value: Map[String, _] @unchecked) => {
             val typeName = if(value.contains("type")){
@@ -152,7 +150,7 @@ object ESSchemaCodeGenerator {
                 case "string"    => "String"
                 case "boolean"   => "Boolean"
                 case "geo_point" => "GeoPoint"
-                case x           => config.typeMappings.getOrElse(x, x)
+                case x           => config.typeMappings.map(_.getOrElse(x, x)).getOrElse(x)
               }
             } else {
               toUpperCamel(key)
@@ -177,9 +175,5 @@ object ESSchemaCodeGenerator {
   }
 
   case class PropInfo(name: String, typeName: String, rawTypeName: String)
-
-  def toUpperCamel(name: String) = name.substring(0, 1).toUpperCase + name.substring(1)
-
-  def toLowerCamel(name: String) = name.substring(0, 1).toLowerCase + name.substring(1)
 
 }
