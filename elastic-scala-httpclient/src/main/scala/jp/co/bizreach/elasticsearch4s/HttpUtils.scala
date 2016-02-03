@@ -8,7 +8,7 @@ class HttpResponseException(status: Int, headers: Seq[(String, String)], body: S
   extends RuntimeException(
     s"HTTP response is bad. Response status: ${status}\n" +
     "---- headers ----\n" +
-    headers.map { case (key, value) => s"${key}: ${value}" }.mkString("\n") +
+    headers.map { case (key, value) => s"${key}: ${value}" }.mkString("\n") + "\n" +
     "---- body ----\n" +
     body
   ){
