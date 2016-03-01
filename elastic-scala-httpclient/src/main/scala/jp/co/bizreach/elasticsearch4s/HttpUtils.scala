@@ -40,7 +40,7 @@ object HttpUtils {
   def put(httpClient: AsyncHttpClient, url: String, json: String): String = {
     val f = httpClient.preparePut(url).setBody(json.getBytes("UTF-8")).execute()
     val response = f.get()
-    if (response.getStatusCode == 200){
+    if (response.getStatusCode >= 200 && response.getStatusCode < 300){
       response.getResponseBody("UTF-8")
     } else {
       throw new HttpResponseException(response)
@@ -56,7 +56,7 @@ object HttpUtils {
   def post(httpClient: AsyncHttpClient, url: String, json: String): String = {
     val f = httpClient.preparePost(url).setBody(json.getBytes("UTF-8")).execute()
     val response = f.get()
-    if (response.getStatusCode == 200) {
+    if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
       response.getResponseBody("UTF-8")
     } else {
       throw new HttpResponseException(response)
@@ -76,7 +76,7 @@ object HttpUtils {
     }
     val f = builder.execute()
     val response = f.get()
-    if (response.getStatusCode == 200) {
+    if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
       response.getResponseBody("UTF-8")
     } else {
       throw new HttpResponseException(response)
@@ -95,7 +95,7 @@ object HttpUtils {
 
   private class AsyncResultHandler(promise: Promise[String]) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
-      if (response.getStatusCode == 200) {
+      if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
         promise.success(response.getResponseBody("UTF-8"))
       } else {
         promise.failure(new HttpResponseException(response))
