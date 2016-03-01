@@ -7,7 +7,7 @@ version := "1.0.6"
 scalaVersion := "2.11.7"
 
 libraryDependencies <++= scalaVersion(sv => Seq(
-  "org.elasticsearch"            %  "elasticsearch"         % "1.1.0",
+  "org.elasticsearch"            %  "elasticsearch"         % "1.7.3",
   "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
   "joda-time"                    %  "joda-time"             % "2.2",
   "org.joda"                     %  "joda-convert"          % "1.6",

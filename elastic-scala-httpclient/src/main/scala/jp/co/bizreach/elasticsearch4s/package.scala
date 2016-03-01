@@ -17,7 +17,6 @@ package object elasticsearch4s {
 
   def matchAllQuery = QueryBuilders.matchAllQuery
   def matchQuery(name: String, text: AnyRef) = QueryBuilders.matchQuery(name, text)
-  def commonTerms(name: String, text: AnyRef) = QueryBuilders.commonTerms(name, text)
   def multiMatchQuery(text: AnyRef, fieldNames: String*) = QueryBuilders.multiMatchQuery(text, fieldNames: _*)
   def matchPhraseQuery(name: String, text: AnyRef) = QueryBuilders.matchPhraseQuery(name, text)
   def matchPhrasePrefixQuery(name: String, text: AnyRef) = QueryBuilders.matchPhrasePrefixQuery(name, text)
@@ -36,8 +35,6 @@ package object elasticsearch4s {
   def rangeQuery(name: String) = QueryBuilders.rangeQuery(name)
   def wildcardQuery(name: String, query: String) = QueryBuilders.wildcardQuery(name, query)
   def regexpQuery(name: String, regexp: String) = QueryBuilders.regexpQuery(name, regexp)
-  def queryString(queryString: String) = QueryBuilders.queryString(queryString)
-  def simpleQueryString(queryString: String) = QueryBuilders.simpleQueryString(queryString)
   def boostingQuery = QueryBuilders.boostingQuery
   def boolQuery = QueryBuilders.boolQuery
   def spanTermQuery(name: String, value: String) = QueryBuilders.spanTermQuery(name, value)
@@ -62,11 +59,6 @@ package object elasticsearch4s {
   def functionScoreQuery(filterBuilder: FilterBuilder) = QueryBuilders.functionScoreQuery(filterBuilder)
   def moreLikeThisQuery(fields: String*) = QueryBuilders.moreLikeThisQuery(fields: _*)
   def moreLikeThisQuery = QueryBuilders.moreLikeThisQuery
-  def fuzzyLikeThisQuery(fields: String*) = QueryBuilders.fuzzyLikeThisQuery(fields: _*)
-  def fuzzyLikeThisQuery = QueryBuilders.fuzzyLikeThisQuery
-  def fuzzyLikeThisFieldQuery(name: String) = QueryBuilders.fuzzyLikeThisFieldQuery(name)
-  def moreLikeThisFieldQuery(name: String) = QueryBuilders.moreLikeThisFieldQuery(name)
-  def topChildrenQuery(`type`: String, query: QueryBuilder) = QueryBuilders.topChildrenQuery(`type`, query)
   def hasChildQuery(`type`: String, query: QueryBuilder) = QueryBuilders.hasChildQuery(`type`, query)
   def hasParentQuery(`type`: String, query: QueryBuilder) = QueryBuilders.hasParentQuery(`type`, query)
   def nestedQuery(path: String, query: QueryBuilder) = QueryBuilders.nestedQuery(path, query)
@@ -85,22 +77,6 @@ package object elasticsearch4s {
       QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[String]]: _*)
     } else {
       QueryBuilders.termsQuery(name, values.asInstanceOf[Seq[AnyRef]]: _*)
-    }
-  }
-  def inQuery[T](name: String, values: T*)(implicit c: ClassTag[T]) = {
-    val clazz = c.runtimeClass
-    if(clazz == classOf[Int]) {
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Int]]: _*)
-    } else if(clazz == classOf[Long]){
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Long]]: _*)
-    } else if(clazz == classOf[Float]){
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Float]]: _*)
-    } else if(clazz == classOf[Double]){
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[Double]]: _*)
-    } else if(clazz == classOf[String]){
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[String]]: _*)
-    } else {
-      QueryBuilders.inQuery(name, values.asInstanceOf[Seq[AnyRef]]: _*)
     }
   }
   def indicesQuery(queryBuilder: QueryBuilder, indices: String*) = QueryBuilders.indicesQuery(queryBuilder, indices: _*)
