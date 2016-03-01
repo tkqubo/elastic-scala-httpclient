@@ -9,7 +9,6 @@ import org.scalatest._
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.io._
-import org.elasticsearch.index.query.QueryBuilders
 import IntegrationTest._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -27,6 +26,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     val client = HttpUtils.createHttpClient()
     HttpUtils.post(client, "http://localhost:9200/my_index",
       Source.fromFile("src/test/resources/schema.json")(Codec("UTF-8")).toString())
+    client.close()
 
     ESClient.init()
     AsyncESClient.init()
@@ -40,7 +40,29 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     AsyncESClient.shutdown()
   }
 
-  test("Register and delete documents"){
+  test("Error response"){
+    val client = HttpUtils.createHttpClient()
+    intercept[HttpResponseException] {
+      // Create existing index to cause HttpResponseException
+      HttpUtils.post(client, "http://localhost:9200/my_index",
+        Source.fromFile("src/test/resources/schema.json")(Codec("UTF-8")).toString())
+    }
+    client.close()
+  }
+
+  test("Error response in async API"){
+    val client = HttpUtils.createHttpClient()
+    // Create existing index to cause HttpResponseException
+    val f = HttpUtils.postAsync(client, "http://localhost:9200/my_index",
+      Source.fromFile("src/test/resources/schema.json")(Codec("UTF-8")).toString())
+
+    intercept[HttpResponseException] {
+      Await.result(f, Duration.Inf)
+    }
+    client.close()
+  }
+
+  test("Sync client"){
     val config = ESConfig("my_index", "my_type")
     val client = ESClient("http://localhost:9200")
 
@@ -59,11 +81,24 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     }
     assert(count1 == 100)
 
+    // Check doc exists
+    val result1 = client.find[Blog](config){ searcher =>
+      searcher.setQuery(matchPhraseQuery("subject", "10"))
+    }
+    assert(result1.get._2.subject == "[10]Hello World!")
+    assert(result1.get._2.content == "This is a first registration test!")
+
     // Delete 1 doc
     client.deleteByQuery(config){ searcher =>
-      searcher.setQuery(QueryBuilders.matchPhraseQuery("subject", "10"))
+      searcher.setQuery(matchPhraseQuery("subject", "10"))
     }
     client.refresh(config)
+
+    // Check doc doesn't exist
+    val result2 = client.find[Blog](config){ searcher =>
+      searcher.setQuery(matchPhraseQuery("subject", "10"))
+    }
+    assert(result2.isEmpty)
 
     // Check doc count
     val count2 = client.countAsInt(config){ searcher =>
@@ -81,7 +116,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     assert(sum == 99)
   }
 
-  test("Search by async API"){
+  test("Async client"){
     val config = ESConfig("my_index", "my_type")
     val client = AsyncESClient("http://localhost:9200")
 
