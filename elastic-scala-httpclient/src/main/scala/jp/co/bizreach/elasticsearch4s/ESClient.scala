@@ -17,11 +17,21 @@ object ESClient {
   private var httpClient: AsyncHttpClient = null
 
   /**
-   * This is the entry point of processing using ElasticSearch.
+   * This is the entry point of processing using Elasticsearch.
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
   def using[T](url: String)(f: ESClient => T): T = {
     val httpClient = new AsyncHttpClient()
+    val client = new ESClient(httpClient, url)
+    try {
+      f(client)
+    } finally {
+      httpClient.close()
+    }
+  }
+
+  def using[T](url: String, config: AsyncHttpClientConfig)(f: ESClient => T): T = {
+    val httpClient = new AsyncHttpClient(config)
     val client = new ESClient(httpClient, url)
     try {
       f(client)
