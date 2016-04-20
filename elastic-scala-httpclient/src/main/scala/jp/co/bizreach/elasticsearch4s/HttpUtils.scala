@@ -3,6 +3,7 @@ package jp.co.bizreach.elasticsearch4s
 import com.ning.http.client._
 import scala.concurrent._
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 class HttpResponseException(status: Int, headers: Seq[(String, String)], body: String)
   extends RuntimeException(
@@ -95,10 +96,14 @@ object HttpUtils {
 
   private class AsyncResultHandler(promise: Promise[String]) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
-      if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
-        promise.success(response.getResponseBody("UTF-8"))
-      } else {
-        promise.failure(new HttpResponseException(response))
+      try {
+        if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
+          promise.success(response.getResponseBody("UTF-8"))
+        } else {
+          promise.failure(new HttpResponseException(response))
+        }
+      } catch {
+        case NonFatal(t) => promise.tryFailure(t)
       }
     }
     override def onThrowable(t: Throwable): Unit = {
