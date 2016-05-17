@@ -3,6 +3,7 @@ package jp.co.bizreach.elasticsearch4s
 import com.ning.http.client._
 import scala.concurrent._
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 class HttpResponseException(status: Int, headers: Seq[(String, String)], body: String)
   extends RuntimeException(
@@ -48,9 +49,9 @@ object HttpUtils {
   }
 
   def putAsync(httpClient: AsyncHttpClient, url: String, json: String): Future[String] = {
-    val promise = Promise[String]()
-    httpClient.preparePut(url).setBody(json.getBytes("UTF-8")).execute(new AsyncResultHandler(promise))
-    promise.future
+    withAsyncResultHandler { handler =>
+      httpClient.preparePut(url).setBody(json.getBytes("UTF-8")).execute(handler)
+    }
   }
 
   def post(httpClient: AsyncHttpClient, url: String, json: String): String = {
@@ -64,9 +65,9 @@ object HttpUtils {
   }
 
   def postAsync(httpClient: AsyncHttpClient, url: String, json: String): Future[String] = {
-    val promise = Promise[String]()
-    httpClient.preparePost(url).setBody(json.getBytes("UTF-8")).execute(new AsyncResultHandler(promise))
-    promise.future
+    withAsyncResultHandler { handler =>
+      httpClient.preparePost(url).setBody(json.getBytes("UTF-8")).execute(handler)
+    }
   }
 
   def delete(httpClient: AsyncHttpClient, url: String, json: String = ""): String = {
@@ -84,21 +85,35 @@ object HttpUtils {
   }
 
   def deleteAsync(httpClient: AsyncHttpClient, url: String, json: String = ""): Future[String] = {
-    val promise = Promise[String]()
-    val builder = httpClient.prepareDelete(url)
-    if(json.nonEmpty){
-      builder.setBody(json.getBytes("UTF-8"))
+    withAsyncResultHandler { handler =>
+      val builder = httpClient.prepareDelete(url)
+      if(json.nonEmpty){
+        builder.setBody(json.getBytes("UTF-8"))
+      }
+      builder.execute(handler)
     }
-    builder.execute(new AsyncResultHandler(promise))
-    promise.future
+  }
+
+  private def withAsyncResultHandler(requestAsync: AsyncResultHandler => Unit): Future[String] = {
+    try {
+      val promise = Promise[String]()
+      requestAsync(new AsyncResultHandler(promise))
+      promise.future
+    } catch {
+      case NonFatal(th) => Future.failed(th)
+    }
   }
 
   private class AsyncResultHandler(promise: Promise[String]) extends AsyncCompletionHandler[Unit] {
     override def onCompleted(response: Response): Unit = {
-      if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
-        promise.success(response.getResponseBody("UTF-8"))
-      } else {
-        promise.failure(new HttpResponseException(response))
+      try {
+        if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
+          promise.success(response.getResponseBody("UTF-8"))
+        } else {
+          promise.failure(new HttpResponseException(response))
+        }
+      } catch {
+        case NonFatal(t) => promise.tryFailure(t)
       }
     }
     override def onThrowable(t: Throwable): Unit = {

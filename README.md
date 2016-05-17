@@ -8,7 +8,7 @@ Elasticsearch HTTP client for Scala with code generator.
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "1.0.6"
+libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "1.0.7"
 ```
 
 You can access Elasticsearch via HTTP Rest API as following:
