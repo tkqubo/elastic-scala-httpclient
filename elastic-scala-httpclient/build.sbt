@@ -2,7 +2,7 @@ name := "elastic-scala-httpclient"
 
 organization := "jp.co.bizreach"
 
-version := "1.0.8"
+version := "1.0.9"
 
 scalaVersion := "2.11.7"
 
@@ -13,7 +13,7 @@ libraryDependencies <++= scalaVersion(sv => Seq(
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
   "com.ning"                     %  "async-http-client"     % "1.9.38",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.5.3",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.7.2",
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 ))
 
