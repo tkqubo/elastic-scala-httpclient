@@ -76,12 +76,7 @@ object HttpUtils {
       builder.setBody(json.getBytes("UTF-8"))
     }
     val f = builder.execute()
-    val response = f.get()
-    if (response.getStatusCode >= 200 && response.getStatusCode < 300) {
-      response.getResponseBody("UTF-8")
-    } else {
-      throw new HttpResponseException(response)
-    }
+    f.get().getResponseBody("UTF-8")
   }
 
   def deleteAsync(httpClient: AsyncHttpClient, url: String, json: String = ""): Future[String] = {
