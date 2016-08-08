@@ -1,72 +1,65 @@
 package jp.co.bizreach.elasticsearch4s.generator
 
 import java.io.File
-import org.json4s._
-import org.json4s.jackson.JsonMethods._
 import Utils._
 
 object ESSchemaCodeGenerator {
-
-  implicit val jsonFormats = DefaultFormats
 
   @SuppressWarnings(Array("unchecked"))
   def generate(): Unit = {
     val config = ESCodegenConfig.load()
     config.mappings.foreach { mapping =>
       val file = new File(mapping.path)
-      val json = parse(read(file))
+      val map = parseJson[Map[String, Any]](read(file))
 
-      (json \\ "mappings") match {
-        case mappings: JObject => {
-          val schemaInfoList = mappings.values.map { case (key: String, value: Map[String, _] @unchecked) =>
-            val props = value("properties").asInstanceOf[Map[String, _]]
-            extractClassInfo(mapping, config, key, props, true)
-          }
-
-          schemaInfoList.foreach { classInfoList =>
-            val sb = new StringBuilder()
-            val head = classInfoList.head
-            val tail = classInfoList.tail
-
-            sb.append(s"package ${mapping.packageName}\n")
-            sb.append(s"import ${head.name}._\n")
-            sb.append("\n")
-            sb.append(generateSource("", head))
-            sb.append("\n")
-            sb.append(s"object ${head.name} {\n")
-            sb.append("\n")
-            sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
-            sb.append("\n")
-            tail.foreach { classInfo =>
-              sb.append(generateSource("  ", classInfo))
-            }
-            if(tail.exists(x => x.props.exists(_.rawTypeName == "GeoPoint"))){
-              sb.append(generateSource("  ", ClassInfo("GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
-            }
-            sb.append("\n")
-
-            sb.append("  implicit val reflectiveCalls = scala.language.reflectiveCalls\n")
-            sb.append("  implicit val implicitConversions = scala.language.implicitConversions\n")
-            sb.append("\n")
-            sb.append("  implicit def name2string(name: Name): String = name.toString()\n")
-            sb.append("\n")
-            sb.append("  case class Name(name: String){\n")
-            sb.append("    lazy val key = if(name.contains(\".\")) name.split(\"\\\\.\").last else name\n")
-            sb.append("    override def toString(): String = name\n")
-            sb.append("  }\n")
-
-            head.props.foreach { prop =>
-              sb.append(generateNames("  ", "", prop, tail))
-            }
-            sb.append("\n")
-            sb.append("}")
-
-            val outputDir = config.outputDir.getOrElse("src/main/scala")
-            val file = new java.io.File(s"${outputDir}/${mapping.packageName.replace('.', '/')}/${head.name}.scala")
-            write(file, sb.toString)
-          }
+      map.get("mappings").foreach { case values: Map[String, Map[String, _]] @unchecked =>
+        val schemaInfoList = values.map { case (key, value) =>
+          val props = value("properties").asInstanceOf[Map[String, _]]
+          extractClassInfo(mapping, config, key, props, true)
         }
-        case  _ =>
+
+        schemaInfoList.foreach { classInfoList =>
+          val sb = new StringBuilder()
+          val head = classInfoList.head
+          val tail = classInfoList.tail
+
+          sb.append(s"package ${mapping.packageName}\n")
+          sb.append(s"import ${head.name}._\n")
+          sb.append("\n")
+          sb.append(generateSource("", head))
+          sb.append("\n")
+          sb.append(s"object ${head.name} {\n")
+          sb.append("\n")
+          sb.append(s"""  val typeName = "${toLowerCamel(head.name)}"\n""")
+          sb.append("\n")
+          tail.foreach { classInfo =>
+            sb.append(generateSource("  ", classInfo))
+          }
+          if(tail.exists(x => x.props.exists(_.rawTypeName == "GeoPoint"))){
+            sb.append(generateSource("  ", ClassInfo("GeoPoint", List(PropInfo("lat", "Double", "Double"), PropInfo("lon", "Double", "Double")))))
+          }
+          sb.append("\n")
+
+          sb.append("  implicit val reflectiveCalls = scala.language.reflectiveCalls\n")
+          sb.append("  implicit val implicitConversions = scala.language.implicitConversions\n")
+          sb.append("\n")
+          sb.append("  implicit def name2string(name: Name): String = name.toString()\n")
+          sb.append("\n")
+          sb.append("  case class Name(name: String){\n")
+          sb.append("    lazy val key = if(name.contains(\".\")) name.split(\"\\\\.\").last else name\n")
+          sb.append("    override def toString(): String = name\n")
+          sb.append("  }\n")
+
+          head.props.foreach { prop =>
+            sb.append(generateNames("  ", "", prop, tail))
+          }
+          sb.append("\n")
+          sb.append("}")
+
+          val outputDir = config.outputDir.getOrElse("src/main/scala")
+          val file = new java.io.File(s"${outputDir}/${mapping.packageName.replace('.', '/')}/${head.name}.scala")
+          write(file, sb.toString)
+        }
       }
     }
   }

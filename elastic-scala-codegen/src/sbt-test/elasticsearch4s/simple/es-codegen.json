@@ -1,0 +1,10 @@
+{
+  "outputDir": "src/main/scala",
+  "mappings": [
+    {
+      "path": "schema.json",
+      "packageName": "models",
+      "className": "Person"
+    }
+  ]
+}
