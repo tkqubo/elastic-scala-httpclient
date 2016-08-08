@@ -1,5 +1,5 @@
 language: scala
 
 script:
-  - cd elastic-scala-httpclient && sbt test
-#  - cd $TRAVIS_BUILD_DIR/elastic-scala-codegen && sbt test scripted
+  - cd $TRAVIS_BUILD_DIR/elastic-scala-httpclient && sbt test
+  - cd $TRAVIS_BUILD_DIR/elastic-scala-codegen && sbt test scripted
