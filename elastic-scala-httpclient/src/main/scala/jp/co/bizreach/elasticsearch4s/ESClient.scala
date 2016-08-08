@@ -112,6 +112,9 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
+  /**
+   * Note: Need delete-by-query to use this method.
+   */
   def deleteByQuery(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug("******** ESConfig:" + config.toString)
     val searcher = queryClient.prepareSearch(config.indexName)

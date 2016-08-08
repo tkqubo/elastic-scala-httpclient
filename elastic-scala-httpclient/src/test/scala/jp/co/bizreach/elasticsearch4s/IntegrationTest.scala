@@ -1,27 +1,53 @@
 package jp.co.bizreach.elasticsearch4s
 
 import java.io.File
+import java.util
 
 import org.apache.commons.io.FileUtils
-import org.elasticsearch.common.settings.ImmutableSettings
-import org.elasticsearch.node.{NodeBuilder, Node}
+import org.elasticsearch.common.settings.Settings
+import org.elasticsearch.node.{Node, NodeBuilder}
 import org.scalatest._
+
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future}
 import scala.io._
 import IntegrationTest._
+import org.elasticsearch.Version
+import org.elasticsearch.env.Environment
+import org.elasticsearch.plugin.deletebyquery.DeleteByQueryPlugin
+import org.elasticsearch.plugins.Plugin
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class IntegrationTest extends FunSuite with BeforeAndAfter {
 
   var node: Node = null
 
+  /**
+   * Extend the Node class to supply plugins on the classpath.
+   */
+  class EmbeddedNode(environment: Environment, version: Version,
+      classpathPlugins: util.Collection[Class[_ <: Plugin]]) extends Node(environment, version, classpathPlugins) {
+    def getPlugins(): util.Collection[Class[_ <: Plugin]] = classpathPlugins
+    def getVersion(): Version = version
+  }
+
   before {
-    val settings = ImmutableSettings.settingsBuilder()
-      .put("http.enabled", "true")
-      .put("http.port", "9200")
-      .put("path.data", "elasticsearch-test-data")
-    node = NodeBuilder.nodeBuilder().settings(settings).node()
+    val builder = Settings.settingsBuilder
+        .put("http.enabled", true)
+        .put("http.port", 9200)
+        .put("path.data", "elasticsearch-test-data")
+        .put("path.home", ".")
+
+    val environment = new Environment(builder.build())
+
+    val plugins = new java.util.ArrayList[Class[_ <: Plugin]]()
+    plugins.add(classOf[DeleteByQueryPlugin])
+
+    node = new EmbeddedNode(environment, Version.CURRENT, plugins)
+    node.start()
+
+    //node = NodeBuilder.nodeBuilder().settings(builder).node()
 
     val client = HttpUtils.createHttpClient()
     HttpUtils.post(client, "http://localhost:9200/my_index",
@@ -33,7 +59,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
   }
 
   after {
-    node.stop()
+    node.close()
     FileUtils.forceDelete(new File("elasticsearch-test-data"))
 
     ESClient.shutdown()
@@ -89,6 +115,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     assert(result1.get._2.content == "This is a first registration test!")
 
     // Delete 1 doc
+//    client.delete(config, result1.get._1)
     client.deleteByQuery(config){ searcher =>
       searcher.setQuery(matchPhraseQuery("subject", "10"))
     }
