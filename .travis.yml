@@ -2,8 +2,7 @@ language: scala
 
 env:
   global:
-    - REPO="bizreach/elastic-scala-httpclient"
-    - CI_HOME=`pwd`/$REPO
+    - CI_HOME=`pwd`
 
 script:
   - cd $CI_HOME/elastic-scala-httpclient && sbt test
