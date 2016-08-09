@@ -1,5 +1,9 @@
 language: scala
 
+env:
+  global:
+    - CI_HOME=`pwd`
+
 script:
-  - cd elastic-scala-httpclient && sbt test
-#  - cd $TRAVIS_BUILD_DIR/elastic-scala-codegen && sbt test scripted
+  - cd $CI_HOME/elastic-scala-httpclient && sbt test
+  - cd $CI_HOME/elastic-scala-codegen && sbt test scripted
