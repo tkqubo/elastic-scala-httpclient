@@ -41,11 +41,11 @@ object ESClient {
   /**
    * Return ESClient instance.
    */
-  def apply(url: String): ESClient = {
+  def apply(url: String, deleteByQueryIsAvailable: Boolean = false): ESClient = {
     if(httpClient == null){
       throw new IllegalStateException("AsyncHttpClient has not been initialized. Call ESClient.init() at first.")
     }
-    new ESClient(httpClient, url)
+    new ESClient(httpClient, url, deleteByQueryIsAvailable)
   }
 
   /**

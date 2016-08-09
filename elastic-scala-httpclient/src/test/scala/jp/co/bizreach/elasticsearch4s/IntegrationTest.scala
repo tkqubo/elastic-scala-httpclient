@@ -90,7 +90,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
 
   test("Sync client"){
     val config = ESConfig("my_index", "my_type")
-    val client = ESClient("http://localhost:9200")
+    val client = ESClient("http://localhost:9200", true)
 
     // Register 100 docs
     (1 to 100).foreach { num =>
