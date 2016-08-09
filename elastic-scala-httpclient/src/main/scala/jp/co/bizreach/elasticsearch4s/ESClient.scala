@@ -20,7 +20,7 @@ object ESClient {
    * This is the entry point of processing using Elasticsearch.
    * Give ESConfig and your function which takes ESSearchHelper as an argument.
    */
-  def using[T](url: String)(f: ESClient => T): T = {
+  def using[T](url: String, deleteByQueryIsAvailable: Boolean = false)(f: ESClient => T): T = {
     val httpClient = new AsyncHttpClient()
     val client = new ESClient(httpClient, url)
     try {
@@ -30,7 +30,7 @@ object ESClient {
     }
   }
 
-  def using[T](url: String, config: AsyncHttpClientConfig)(f: ESClient => T): T = {
+  def using[T](url: String, config: AsyncHttpClientConfig, deleteByQueryIsAvailable: Boolean = false)(f: ESClient => T): T = {
     val httpClient = new AsyncHttpClient(config)
     val client = new ESClient(httpClient, url)
     try {
@@ -74,7 +74,7 @@ object ESClient {
 
 }
 
-class ESClient(httpClient: AsyncHttpClient, url: String) {
+class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailable: Boolean = false) {
 
   private val queryClient = new QueryBuilderClient()
 
@@ -116,15 +116,19 @@ class ESClient(httpClient: AsyncHttpClient, url: String) {
    * Note: Need delete-by-query to use this method.
    */
   def deleteByQuery(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
-    logger.debug("******** ESConfig:" + config.toString)
-    val searcher = queryClient.prepareSearch(config.indexName)
-    config.typeName.foreach(x => searcher.setTypes(x))
-    f(searcher)
-    logger.debug(s"deleteByQuery:${searcher.toString}")
+    if(deleteByQueryIsAvailable) {
+      logger.debug("******** ESConfig:" + config.toString)
+      val searcher = queryClient.prepareSearch(config.indexName)
+      config.typeName.foreach(x => searcher.setTypes(x))
+      f(searcher)
+      logger.debug(s"deleteByQuery:${searcher.toString}")
 
-    val resultJson = HttpUtils.delete(httpClient, config.url(url) + "/_query", searcher.toString)
-    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+      val resultJson = HttpUtils.delete(httpClient, config.url(url) + "/_query", searcher.toString)
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    } else {
+      throw new UnsupportedOperationException("You can install delete-by-query plugin to use this method.")
+    }
   }
 
   def count(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
