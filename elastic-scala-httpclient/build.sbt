@@ -2,18 +2,19 @@ name := "elastic-scala-httpclient"
 
 organization := "jp.co.bizreach"
 
-version := "1.0.10"
+version := "2.0.0-SNAPSHOT"
 
 scalaVersion := "2.11.7"
 
 libraryDependencies <++= scalaVersion(sv => Seq(
-  "org.elasticsearch"            %  "elasticsearch"         % "1.7.3",
+  "org.elasticsearch"            %  "elasticsearch"         % "2.3.5",
   "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
   "joda-time"                    %  "joda-time"             % "2.2",
   "org.joda"                     %  "joda-convert"          % "1.6",
   "commons-io"                   %  "commons-io"            % "2.4",
   "com.ning"                     %  "async-http-client"     % "1.9.38",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.7.2",
+  "org.elasticsearch.plugin"     %  "delete-by-query"       % "2.3.5" % "test",
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 ))
 

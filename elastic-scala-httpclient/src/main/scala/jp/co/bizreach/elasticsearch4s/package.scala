@@ -48,21 +48,16 @@ package object elasticsearch4s {
   def spanOrQuery = QueryBuilders.spanOrQuery
   def spanMultiTermQueryBuilder(multiTermQueryBuilder: MultiTermQueryBuilder) = QueryBuilders.spanMultiTermQueryBuilder(multiTermQueryBuilder)
   def fieldMaskingSpanQuery(query: SpanQueryBuilder, field: String) = QueryBuilders.fieldMaskingSpanQuery(query, field)
-  def filteredQuery(queryBuilder: QueryBuilder, filterBuilder: FilterBuilder) = QueryBuilders.filteredQuery(queryBuilder, filterBuilder)
-  def constantScoreQuery(filterBuilder: FilterBuilder) = QueryBuilders.constantScoreQuery(filterBuilder)
   def constantScoreQuery(queryBuilder: QueryBuilder) = QueryBuilders.constantScoreQuery(queryBuilder)
   def functionScoreQuery(queryBuilder: QueryBuilder) = QueryBuilders.functionScoreQuery(queryBuilder)
   def functionScoreQuery = QueryBuilders.functionScoreQuery
   def functionScoreQuery(function: ScoreFunctionBuilder) = QueryBuilders.functionScoreQuery(function)
   def functionScoreQuery(queryBuilder: QueryBuilder, function: ScoreFunctionBuilder) = QueryBuilders.functionScoreQuery(queryBuilder, function)
-  def functionScoreQuery(filterBuilder: FilterBuilder, function: ScoreFunctionBuilder) = QueryBuilders.functionScoreQuery(filterBuilder, function)
-  def functionScoreQuery(filterBuilder: FilterBuilder) = QueryBuilders.functionScoreQuery(filterBuilder)
   def moreLikeThisQuery(fields: String*) = QueryBuilders.moreLikeThisQuery(fields: _*)
   def moreLikeThisQuery = QueryBuilders.moreLikeThisQuery
   def hasChildQuery(`type`: String, query: QueryBuilder) = QueryBuilders.hasChildQuery(`type`, query)
   def hasParentQuery(`type`: String, query: QueryBuilder) = QueryBuilders.hasParentQuery(`type`, query)
   def nestedQuery(path: String, query: QueryBuilder) = QueryBuilders.nestedQuery(path, query)
-  def nestedQuery(path: String, filter: FilterBuilder) = QueryBuilders.nestedQuery(path, filter)
   def termsQuery[T](name: String, values: T*)(implicit c: ClassTag[T]) = {
     val clazz = c.runtimeClass
     if(clazz == classOf[Int]) {
