@@ -233,7 +233,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
   }
 
   def countByTemplateAsync(config: ESConfig)(lang: String, template: String, params: AnyRef): Future[Either[Map[String, Any], Map[String, Any]]] = {
-    searchByTemplateAsync(config)(lang, template, params, Some("?search_type=count"))
+    searchByTemplateAsync(config)(lang, template, params, Some("?size=0"))
   }
 
   def countByTemplateAsIntAsync(config: ESConfig)(lang: String, template: String, params: AnyRef): Future[Int] = {
