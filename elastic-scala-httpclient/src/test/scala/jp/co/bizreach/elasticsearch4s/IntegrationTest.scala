@@ -66,6 +66,21 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     AsyncESClient.shutdown()
   }
 
+  test("Insert with id"){
+    val config = ESConfig("my_index", "my_type")
+    val client = ESClient("http://localhost:9200", true)
+
+    client.insert(config, "123", Blog("Hello World!", "This is a first registration test!"))
+
+    client.refresh(config)
+
+    val result = client.find[Blog](config){ searcher =>
+      searcher.setQuery(idsQuery("my_type").addIds("123"))
+    }
+
+    assert(result == Some("123", Blog("Hello World!", "This is a first registration test!")))
+  }
+
   test("Error response"){
     val client = HttpUtils.createHttpClient()
     intercept[HttpResponseException] {

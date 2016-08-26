@@ -71,9 +71,16 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
 
   def insertJson(config: ESConfig, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"insertJson:\n${json}")
-    logger.debug(s"insertRequest:\n${json}")
 
     val resultJson = HttpUtils.post(httpClient, config.url(url), json)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
+  def insertJson(config: ESConfig, id: String, json: String): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug(s"insertJson:\n${json}")
+
+    val resultJson = HttpUtils.post(httpClient, config.url(url) + "/" + id, json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
@@ -82,9 +89,12 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
     insertJson(config, JsonUtils.serialize(entity))
   }
 
+  def insert(config: ESConfig, id: String, entity: AnyRef):  Either[Map[String, Any], Map[String, Any]] = {
+    insertJson(config, id, JsonUtils.serialize(entity))
+  }
+
   def updateJson(config: ESConfig, id: String, json: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"updateJson:\n${json}")
-    logger.debug(s"updateRequest:\n${json}")
 
     val resultJson = HttpUtils.put(httpClient, config.url(url) + "/" + id, json)
     val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
