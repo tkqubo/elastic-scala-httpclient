@@ -16,11 +16,14 @@ import org.elasticsearch.Version
 import org.elasticsearch.env.Environment
 import org.elasticsearch.plugin.deletebyquery.DeleteByQueryPlugin
 import org.elasticsearch.plugins.Plugin
+import org.elasticsearch.script.groovy.GroovyPlugin
+import org.codelibs.elasticsearch.sstmpl.ScriptTemplatePlugin
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class IntegrationTest extends FunSuite with BeforeAndAfter {
 
+  System.setSecurityManager(null) // to enable execution of script
   var node: Node = null
 
   /**
@@ -37,12 +40,14 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
         .put("http.enabled", true)
         .put("http.port", 9200)
         .put("path.data", "elasticsearch-test-data")
-        .put("path.home", ".")
+        .put("path.home", "src/test/resources")
 
     val environment = new Environment(builder.build())
 
     val plugins = new java.util.ArrayList[Class[_ <: Plugin]]()
     plugins.add(classOf[DeleteByQueryPlugin])
+    plugins.add(classOf[GroovyPlugin])
+    plugins.add(classOf[ScriptTemplatePlugin])
 
     node = new EmbeddedNode(environment, Version.CURRENT, plugins)
     node.start()
@@ -156,6 +161,14 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
       1
     }.sum
     assert(sum == 99)
+
+    // Count by template
+    val count3 = client.countByTemplateAsInt(config)(
+      lang = "groovy",
+      template = "test_script",
+      params = Map("subjectValue" -> "Hello")
+    )
+    assert(count3 === 99)
   }
 
   test("Async client"){

@@ -1,0 +1,1 @@
+"{\"query\":{\"match_phrase\":{\"subject\":\"" + subjectValue + "\"}}}"

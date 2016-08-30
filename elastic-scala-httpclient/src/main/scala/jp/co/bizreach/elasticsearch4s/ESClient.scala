@@ -248,7 +248,7 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
   }
 
   def countByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
-    searchByTemplate(config)(lang, template, params, Some("?search_type=count"))
+    searchByTemplate(config)(lang, template, params, Some("?search_type=query_then_fetch&size=0"))
   }
 
   def countByTemplateAsInt(config: ESConfig)(lang: String, template: String, params: AnyRef): Int = {
