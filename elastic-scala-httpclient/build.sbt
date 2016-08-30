@@ -15,6 +15,8 @@ libraryDependencies <++= scalaVersion(sv => Seq(
   "com.ning"                     %  "async-http-client"     % "1.9.38",
   "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.7.2",
   "org.elasticsearch.plugin"     %  "delete-by-query"       % "2.3.5" % "test",
+  "org.elasticsearch.module"     %  "lang-groovy"           % "2.3.5" % "test",
+  "org.codelibs"                 %  "elasticsearch-sstmpl"  % "2.3.1" % "test",
   "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
 ))
 
