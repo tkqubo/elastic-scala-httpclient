@@ -255,7 +255,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
 
   def scrollAsync[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (String, T) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Future[Stream[R]] = {
     def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Future[Stream[R]] = {
-      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m&sort=_doc", body)
       future.flatMap { resultJson =>
         val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
         if(map.get("error").isDefined){
@@ -284,7 +284,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
 
   def scrollChunkAsync[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (Seq[(String, T)]) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Future[Stream[R]] = {
     def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (Seq[(String, Map[String, Any])]) => R): Future[Stream[R]] = {
-      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      val future = HttpUtils.postAsync(httpClient, searchUrl + "?scroll=5m&sort=_doc", body)
       future.flatMap { resultJson =>
         val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
         if(map.get("error").isDefined){

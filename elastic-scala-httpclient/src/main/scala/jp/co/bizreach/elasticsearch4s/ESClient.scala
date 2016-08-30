@@ -267,7 +267,7 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
   def scroll[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (String, T) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
     @tailrec
     def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (String, Map[String, Any]) => R): Stream[R] = {
-      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m&sort=_doc", body)
       val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
       if(map.get("error").isDefined){
         throw new RuntimeException(map("error").toString)
@@ -295,7 +295,7 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
   def scrollChunk[T, R](config: ESConfig)(f: SearchRequestBuilder => Unit)(p: (Seq[(String, T)]) => R)(implicit c1: ClassTag[T], c2: ClassTag[R]): Stream[R] = {
     @tailrec
     def scroll0[R](init: Boolean, searchUrl: String, body: String, stream: Stream[R], invoker: (Seq[(String, Map[String, Any])]) => R): Stream[R] = {
-      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m" + (if(init) "&search_type=scan" else ""), body)
+      val resultJson = HttpUtils.post(httpClient, searchUrl + "?scroll=5m&sort=_doc", body)
       val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
       if(map.get("error").isDefined){
         throw new RuntimeException(map("error").toString)
