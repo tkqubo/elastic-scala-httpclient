@@ -12,9 +12,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object AsyncESClient {
   private var httpClient: AsyncHttpClient = null
 
-  def using[T](url: String)(f: AsyncESClient => Future[T]): Future[T] = {
+  def using[T](url: String, scriptTemplateIsAvailable: Boolean = false)(f: AsyncESClient => Future[T]): Future[T] = {
     val httpClient = HttpUtils.createHttpClient()
-    val client = new AsyncESClient(new QueryBuilderClient(), httpClient, url)
+    val client = new AsyncESClient(new QueryBuilderClient(), httpClient, url, scriptTemplateIsAvailable)
     val future = f(client)
     future.onComplete { case t =>
       httpClient.close()
@@ -38,7 +38,8 @@ object AsyncESClient {
   }
 }
 
-class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String) {
+class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, url: String,
+                    scriptTemplateIsAvailable: Boolean = false) {
 
   val logger = LoggerFactory.getLogger(classOf[AsyncESClient])
 
@@ -72,23 +73,31 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def searchByTemplateAsync(config: ESConfig)(lang: String, template: String, params: AnyRef, options: Option[String] = None): Future[Either[Map[String, Any], Map[String, Any]]] = {
-    logger.debug("******** ESConfig:" + config.toString)
-    val json = JsonUtils.serialize(
-      Map(
-        "lang" -> lang,
-        "template" -> Map(
-          "file" -> template
-        ),
-        "params" -> params
+    if(scriptTemplateIsAvailable) {
+      logger.debug("******** ESConfig:" + config.toString)
+      val json = JsonUtils.serialize(
+        Map(
+          "lang" -> lang,
+          "template" -> Map(
+            "file" -> template
+          ),
+          "params" -> params
+        )
       )
-    )
-    logger.debug(s"searchRequest:${json}")
+      logger.debug(s"searchRequest:${json}")
 
-    val future = HttpUtils.postAsync(httpClient, config.urlWithParameters(url, "_search/template" + options.getOrElse("")), json)
-    future.map { resultJson =>
-      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+      val future = HttpUtils.postAsync(httpClient, config.urlWithParameters(url, "_search/template" + options.getOrElse("")), json)
+      future.map { resultJson =>
+        val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+        map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+      }
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
     }
   }
 
@@ -146,12 +155,20 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def listByTemplateAsync[T](config: ESConfig)(lang: String, template: String, params: AnyRef)(implicit c: ClassTag[T]): Future[ESSearchResult[T]] = {
-    searchByTemplateAsync(config)(lang, template, params).map { result =>
-      result match {
-        case Left(x)  => throw new RuntimeException(x("error").toString)
-        case Right(x) => createESSearchResult(x)
+    if(scriptTemplateIsAvailable){
+      searchByTemplateAsync(config)(lang, template, params).map { result =>
+        result match {
+          case Left(x)  => throw new RuntimeException(x("error").toString)
+          case Right(x) => createESSearchResult(x)
+        }
       }
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
     }
   }
 
@@ -232,16 +249,32 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def countByTemplateAsync(config: ESConfig)(lang: String, template: String, params: AnyRef): Future[Either[Map[String, Any], Map[String, Any]]] = {
-    searchByTemplateAsync(config)(lang, template, params, Some("?search_type=query_then_fetch&size=0"))
+    if(scriptTemplateIsAvailable){
+      searchByTemplateAsync(config)(lang, template, params, Some("?search_type=query_then_fetch&size=0"))
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
+    }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def countByTemplateAsIntAsync(config: ESConfig)(lang: String, template: String, params: AnyRef): Future[Int] = {
-    countByTemplateAsync(config)(lang: String, template: String, params: AnyRef).map { result =>
-      result match {
-        case Left(x)  => throw new RuntimeException(x("error").toString)
-        case Right(x) => x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+    if(scriptTemplateIsAvailable){
+      countByTemplateAsync(config)(lang: String, template: String, params: AnyRef).map { result =>
+        result match {
+          case Left(x)  => throw new RuntimeException(x("error").toString)
+          case Right(x) => x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+        }
       }
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
     }
   }
 

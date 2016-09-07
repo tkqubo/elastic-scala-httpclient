@@ -73,7 +73,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
 
   test("Insert with id"){
     val config = ESConfig("my_index", "my_type")
-    val client = ESClient("http://localhost:9200", true)
+    val client = ESClient("http://localhost:9200", true, true)
 
     client.insert(config, "123", Blog("Hello World!", "This is a first registration test!"))
 
@@ -110,7 +110,7 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
 
   test("Sync client"){
     val config = ESConfig("my_index", "my_type")
-    val client = ESClient("http://localhost:9200", true)
+    val client = ESClient("http://localhost:9200", true, true)
 
     // Register 100 docs
     (1 to 100).foreach { num =>

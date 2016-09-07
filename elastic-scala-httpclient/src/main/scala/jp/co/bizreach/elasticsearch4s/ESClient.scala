@@ -21,9 +21,10 @@ object ESClient {
    */
   def using[T](url: String,
                config: AsyncHttpClientConfig = new AsyncHttpClientConfig.Builder().build(),
-               deleteByQueryIsAvailable: Boolean = false)(f: ESClient => T): T = {
+               deleteByQueryIsAvailable: Boolean = false,
+               scriptTemplateIsAvailable: Boolean = false)(f: ESClient => T): T = {
     val httpClient = new AsyncHttpClient(config)
-    val client = new ESClient(httpClient, url)
+    val client = new ESClient(httpClient, url, deleteByQueryIsAvailable, scriptTemplateIsAvailable)
     try {
       f(client)
     } finally {
@@ -41,11 +42,11 @@ object ESClient {
   /**
    * Return ESClient instance.
    */
-  def apply(url: String, deleteByQueryIsAvailable: Boolean = false): ESClient = {
+  def apply(url: String, deleteByQueryIsAvailable: Boolean = false, scriptTemplateIsAvailable: Boolean = false): ESClient = {
     if(httpClient == null){
       throw new IllegalStateException("AsyncHttpClient has not been initialized. Call ESClient.init() at first.")
     }
-    new ESClient(httpClient, url, deleteByQueryIsAvailable)
+    new ESClient(httpClient, url, deleteByQueryIsAvailable, scriptTemplateIsAvailable)
   }
 
   /**
@@ -65,7 +66,8 @@ object ESClient {
 
 }
 
-class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailable: Boolean = false) {
+class ESClient(httpClient: AsyncHttpClient, url: String,
+               deleteByQueryIsAvailable: Boolean = false, scriptTemplateIsAvailable: Boolean = false) {
 
   private val queryClient = new QueryBuilderClient()
 
@@ -114,7 +116,8 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
   }
 
   /**
-   * Note: Need delete-by-query to use this method.
+   * Note: Need delete-by-query plugin to use this method.
+   * https://www.elastic.co/guide/en/elasticsearch/plugins/2.3/plugins-delete-by-query.html
    */
   def deleteByQuery(config: ESConfig)(f: SearchRequestBuilder => Unit): Either[Map[String, Any], Map[String, Any]] = {
     if(deleteByQueryIsAvailable) {
@@ -177,22 +180,30 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def searchByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef, options: Option[String] = None): Either[Map[String, Any], Map[String, Any]] = {
-    logger.debug("******** ESConfig:" + config.toString)
-    val json = JsonUtils.serialize(
-      Map(
-        "lang" -> lang,
-        "template" -> Map(
-          "file" -> template
-        ),
-        "params" -> params
+    if(scriptTemplateIsAvailable) {
+      logger.debug("******** ESConfig:" + config.toString)
+      val json = JsonUtils.serialize(
+        Map(
+          "lang" -> lang,
+          "template" -> Map(
+            "file" -> template
+          ),
+          "params" -> params
+        )
       )
-    )
-    logger.debug(s"searchRequest:${json}")
+      logger.debug(s"searchRequest:${json}")
 
-    val resultJson = HttpUtils.post(httpClient, config.urlWithParameters(url, "_search/template" + options.getOrElse("")), json)
-    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+      val resultJson = HttpUtils.post(httpClient, config.urlWithParameters(url, "_search/template" + options.getOrElse("")), json)
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
+    }
   }
 
   def find[T](config: ESConfig)(f: SearchRequestBuilder => Unit)(implicit c: ClassTag[T]): Option[(String, T)] = {
@@ -240,21 +251,45 @@ class ESClient(httpClient: AsyncHttpClient, url: String, deleteByQueryIsAvailabl
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def listByTemplate[T](config: ESConfig)(lang: String, template: String, params: AnyRef)(implicit c: ClassTag[T]): ESSearchResult[T] = {
-    searchByTemplate(config)(lang, template, params) match {
-      case Left(x)  => throw new RuntimeException(x("error").toString)
-      case Right(x) => createESSearchResult(x)
+    if(scriptTemplateIsAvailable) {
+      searchByTemplate(config)(lang, template, params) match {
+        case Left(x)  => throw new RuntimeException(x("error").toString)
+        case Right(x) => createESSearchResult(x)
+      }
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
     }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def countByTemplate(config: ESConfig)(lang: String, template: String, params: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
-    searchByTemplate(config)(lang, template, params, Some("?search_type=query_then_fetch&size=0"))
+    if(scriptTemplateIsAvailable) {
+      searchByTemplate(config)(lang, template, params, Some("?search_type=query_then_fetch&size=0"))
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
+    }
   }
 
+  /**
+   * Note: Need elasticsearch-sstmpl plugin to use this method.
+   * https://github.com/codelibs/elasticsearch-sstmpl
+   */
   def countByTemplateAsInt(config: ESConfig)(lang: String, template: String, params: AnyRef): Int = {
-    countByTemplate(config)(lang: String, template: String, params: AnyRef) match {
-      case Left(x)  => throw new RuntimeException(x("error").toString)
-      case Right(x) => x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+    if(scriptTemplateIsAvailable) {
+      countByTemplate(config)(lang: String, template: String, params: AnyRef) match {
+        case Left(x)  => throw new RuntimeException(x("error").toString)
+        case Right(x) => x("hits").asInstanceOf[Map[String, Any]]("total").asInstanceOf[Int]
+      }
+    } else {
+      throw new UnsupportedOperationException("You can install elasticsearch-sstmpl plugin to use this method.")
     }
   }
 
