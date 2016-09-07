@@ -61,7 +61,35 @@ ESClient.shutdown()
 
 [AsyncESClient](https://github.com/bizreach/elastic-scala-httpclient/blob/master/elastic-scala-httpclient/src/main/scala/jp/co/bizreach/elasticsearch4s/AsyncESClient.scala) that is an asynchrnous version of ESClient is also available. All methods of `AsyncESClient` returns `Future`.
 
-elasticsearch4s is a wrapper of Elasticsearch Java API. Therefore see [its document]( http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/) to know details, especially how to build query.
+elastic-scala-httpclient is a wrapper of Elasticsearch Java API. Therefore see [its document]( http://www.elasticsearch.org/guide/en/elasticsearch/client/java-api/current/) to know details, especially how to build query.
+
+## Addtional requirements
+
+Some methods of `ESClient` and `AsyncESClient` need Elasticsearch plug-ins. You have to install following plug-ins into Elasticsearch to use these methods:
+
+|Method               |Elasticsearch plug-in                                                                                          |
+|--------------------|----------------------------------------------------------------------------------------------------------------|
+|deleteByQuery       |[delete-by-query plugin](https://www.elastic.co/guide/en/elasticsearch/plugins/2.3/plugins-delete-by-query.html)|
+|searchByTemplate    |[elasticsearch-sstmpl plug-in](https://github.com/codelibs/elasticsearch-sstmpl)                                |
+|listByTemplate      |[elasticsearch-sstmpl plug-in](https://github.com/codelibs/elasticsearch-sstmpl)                                |
+|countByTemplate     |[elasticsearch-sstmpl plug-in](https://github.com/codelibs/elasticsearch-sstmpl)                                |
+|countByTemplateAsInt|[elasticsearch-sstmpl plug-in](https://github.com/codelibs/elasticsearch-sstmpl)                                |
+
+Furthermore you have to indicate to enable these methods as follows (In default, these methods throws `IllegalStateException`):
+
+```scala
+// Enable deleteByQuery method
+ESClient.using("http://localhost:9200",
+  deleteByQueryIsAvailable = true){ client =>
+  ...
+}
+
+// Enable xxxxByTemplate methods
+ESClient.using("http://localhost:9200",
+  scriptTemplateIsAvailable = true){ client =>
+  ...
+}
+```
 
 ## Code Generator
 
