@@ -38,7 +38,7 @@ case class ESConfig(indexName: String, typeName: Option[String] = None, preferen
     }
 
     u3 + timeout.map { x =>
-      (if(u3.indexOf('?') >= 0) "&" else "?") + "timeout=" + x
+      (if(u3.indexOf('?') >= 0) "&" else "?") + "timeout=" + x + "ms"
     }.getOrElse("")
   }
 }
