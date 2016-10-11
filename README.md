@@ -8,7 +8,7 @@ Elasticsearch HTTP client for Scala with code generator.
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "2.0.2"
+libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "2.0.3"
 ```
 
 You can access Elasticsearch via HTTP Rest API as following:
@@ -98,7 +98,7 @@ elastic-scala-codegen can generate source code from Elasticsearch schema json fi
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.3")
+addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.4")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-codegen`. Source code will be generated into `src/main/scala/models`.
