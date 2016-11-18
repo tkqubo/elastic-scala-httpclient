@@ -107,6 +107,18 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     updateJson(config, id, JsonUtils.serialize(entity))
   }
 
+  def updatePartiallyJson(config: ESConfig, id: String, json: String): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug(s"updatePartiallyJson:\n${json}")
+
+    val resultJson = HttpUtils.post(httpClient, config.url(url) + "/" + id + "/_update", "{\"doc\":"+ s"${json}}")
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+  }
+
+  def updatePartially(config: ESConfig, id: String, entity: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
+    updatePartiallyJson(config, id, JsonUtils.serialize(entity))
+  }
+
   def delete(config: ESConfig, id: String): Either[Map[String, Any], Map[String, Any]] = {
     logger.debug(s"delete id:\n${id}")
 
