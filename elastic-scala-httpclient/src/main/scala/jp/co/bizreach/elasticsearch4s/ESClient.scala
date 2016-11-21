@@ -266,6 +266,18 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     }
   }
 
+  def findByIds[T](config: ESConfig, ids: Seq[String])(implicit c: ClassTag[T]): List[T] = {
+    logger.debug("******** ESConfig:" + config.toString)
+    val json = JsonUtils.serialize(Map("ids" -> ids))
+    logger.debug(s"multigetRequest:${json}")
+
+    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_mget"), json)
+    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    map.get("docs").map { docs =>
+      docs.asInstanceOf[List[Map[String, Any]]].map(doc => JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source"))))
+    }.getOrElse(Nil)
+  }
+
   /**
    * Note: Need elasticsearch-sstmpl plugin to use this method.
    * https://github.com/codelibs/elasticsearch-sstmpl
