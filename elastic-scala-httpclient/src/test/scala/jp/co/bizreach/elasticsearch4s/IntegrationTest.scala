@@ -112,6 +112,30 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     assert(updateResult2 == Some("1234", Blog("Hello Scala!", "This is a updated data")))
   }
 
+  test("MultiGet") {
+    val config = ESConfig("my_index", "my_type")
+    val client = ESClient("http://localhost:9200", true, true)
+
+    val ids = Seq("1001", "1002", "1003")
+    ids.foreach(id => client.insert(config, id, Blog(s"[${id}]Hello World!", s"${id}This is a mget test!")))
+
+    client.refresh(config)
+
+    // Check mutiget results
+    val mgetResults1 = client.findAllByIdsAsList[Blog](config, ids)
+    (mgetResults1) foreach {
+      case (id, result) =>
+        assert(result.subject == s"[${id}]Hello World!")
+        assert(result.content == s"${id}This is a mget test!")
+    }
+    val mgetResults2 = client.findAllByTypeAndIdAsList[Blog](ids.map(id => config -> id))
+    (mgetResults2) foreach {
+      case (id, result) =>
+        assert(result.subject == s"[${id}]Hello World!")
+        assert(result.content == s"${id}This is a mget test!")
+    }
+  }
+
   test("Error response"){
     val client = HttpUtils.createHttpClient()
     intercept[HttpResponseException] {
