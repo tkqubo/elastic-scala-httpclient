@@ -15,6 +15,7 @@ You can access Elasticsearch via HTTP Rest API as following:
 
 ```scala
 case class Tweet(name: String, message: String)
+case class TweetMessage(message: String)
 
 import jp.co.bizreach.elasticsearch4s._
 
@@ -28,6 +29,10 @@ ESClient.using("http://localhost:9200"){ client =>
   // Update
   client.update(config, "1", Tweet("takezoe", "Hello Scala!!"))
   client.updateJson(config, "1", """{name: "takezoe", message: "Hello World!!"}""")
+
+  // Update partially
+  client.updatePartially(config, "1", TweetMessage("Hello Japan!!"))
+  client.updatePartiallyJson(config, "1", """{name: "takechan" }""")
 
   // Delete
   client.delete(config, "1")

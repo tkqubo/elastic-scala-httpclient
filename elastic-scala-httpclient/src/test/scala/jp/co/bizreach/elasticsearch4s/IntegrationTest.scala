@@ -86,6 +86,32 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     assert(result == Some("123", Blog("Hello World!", "This is a first registration test!")))
   }
 
+  test("Update partially"){
+    val config = ESConfig("my_index", "my_type")
+    val client = ESClient("http://localhost:9200", true, true)
+
+    client.insert(config, "1234", Blog("Hello World!", "This is a registered data"))
+    client.refresh(config)
+    val registrationResult = client.find[Blog](config){ searcher =>
+      searcher.setQuery(idsQuery("my_type").addIds("1234"))
+    }
+    assert(registrationResult == Some("1234", Blog("Hello World!", "This is a registered data")))
+
+    client.updatePartially(config, "1234", BlogContent("This is a updated data"))
+    client.refresh(config)
+    val updateResult1 = client.find[Blog](config){ searcher =>
+      searcher.setQuery(idsQuery("my_type").addIds("1234"))
+    }
+    assert(updateResult1 == Some("1234", Blog("Hello World!", "This is a updated data")))
+
+    client.updatePartiallyJson(config, "1234", "{ \"subject\": \"Hello Scala!\" }")
+    client.refresh(config)
+    val updateResult2 = client.find[Blog](config){ searcher =>
+      searcher.setQuery(idsQuery("my_type").addIds("1234"))
+    }
+    assert(updateResult2 == Some("1234", Blog("Hello Scala!", "This is a updated data")))
+  }
+
   test("Error response"){
     val client = HttpUtils.createHttpClient()
     intercept[HttpResponseException] {
@@ -198,4 +224,5 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
 
 object IntegrationTest {
   case class Blog(subject: String, content: String)
+  case class BlogContent(content: String)
 }
