@@ -278,17 +278,40 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     }
   }
 
-  def findByIds[T](config: ESConfig, ids: Seq[String])(implicit c: ClassTag[T]): List[T] = {
-    logger.debug("******** ESConfig:" + config.toString)
+  def findAllByTypeAndIdAsList[T](ids: Seq[(ESConfig, String)])(implicit c: ClassTag[T]): List[(String, T)] = {
+    val docs =
+      for {
+        (config, id) <- ids
+        typeName <- config.typeName
+      } yield Map(
+        "_index" -> config.indexName,
+        "_type" -> typeName,
+        "_id" -> id
+      )
+    val json = JsonUtils.serialize(Map("docs" -> docs))
+    logger.debug(s"multigetRequest:${json}")
+    val result = HttpUtils.post(httpClient, s"${url}/_mget", json)
+    mgetResultToList(result)
+  }
+
+  def findAllByIdsAsList[T](config: ESConfig, ids: Seq[String])(implicit c: ClassTag[T]): List[(String, T)] = {
     val json = JsonUtils.serialize(Map("ids" -> ids))
     logger.debug(s"multigetRequest:${json}")
+    val result = HttpUtils.post(httpClient, config.url(url) + "/_mget", json)
+    mgetResultToList(result)
+  }
 
-    val resultJson = HttpUtils.post(httpClient, config.preferenceUrl(url, "_mget"), json)
-    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-    map.get("docs").map {
-      case docs: List[Map[String, Any]] =>
-        docs.map(doc => JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source"))))
-    }.getOrElse(Nil)
+  private def mgetResultToList[T](resultJson: String)(implicit c: ClassTag[T]): List[(String, T)] = {
+    val result = JsonUtils.deserialize[Map[String, Any]](resultJson)
+    result
+      .get("_docs")
+      .map { maps =>
+        val docs = maps.asInstanceOf[List[Map[String, Any]]]
+        docs.map { doc =>
+          doc("_id").toString -> JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source")))
+        }
+      }
+      .getOrElse(Nil)
   }
 
   /**
