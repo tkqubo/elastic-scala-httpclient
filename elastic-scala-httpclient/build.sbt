@@ -2,11 +2,9 @@ name := "elastic-scala-httpclient"
 
 organization := "jp.co.bizreach"
 
-version := "2.0.4-SNAPSHOT"
+version := "2.0.4"
 
 scalaVersion := "2.12.0"
-
-crossScalaVersions := Seq("2.11.8", "2.12.0")
 
 libraryDependencies ++= Seq(
   "jp.co.bizreach"               %  "elasticsearch"         % "2.3.5.1",

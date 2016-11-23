@@ -4,9 +4,9 @@ name := "elastic-scala-codegen"
 
 organization := "jp.co.bizreach"
 
-version := "1.0.5-SNAPSHOT"
+version := "1.0.5"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.6"
 
 libraryDependencies ++= Seq(
   "commons-io" % "commons-io" % "2.5",
