@@ -9,7 +9,7 @@ scalaVersion := "2.12.0"
 crossScalaVersions := Seq("2.11.8", "2.12.0")
 
 libraryDependencies ++= Seq(
-  "jp.co.bizreach"               %  "elasticsearch"         % "2.3.5",
+  "jp.co.bizreach"               %  "elasticsearch"         % "2.3.5.1",
   "org.slf4j"                    %  "slf4j-api"             % "1.7.21",
   "joda-time"                    %  "joda-time"             % "2.9.6",
   "org.joda"                     %  "joda-convert"          % "1.8.1",
