@@ -283,9 +283,12 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     result.get("docs").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(Nil)
   }
 
-  def findAllByTypeAndIdAsList[T](ids: Seq[(ESConfig, String)])(implicit c: ClassTag[T]): List[(String, T)] = {
-    findAllByTypeAndId(ids).map { doc =>
-      doc("_id").toString -> JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source")))
+  def findAllByTypeAndIdAsList[T](ids: Seq[(ESConfig, String)])(implicit c: ClassTag[T]): List[(String, Option[T])] = {
+    findAllByTypeAndId(ids).collect {
+      case doc if doc.get("found").exists(_ == true) =>
+        doc("_id").toString -> Some(JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source"))))
+      case doc =>
+        doc("_id").toString -> None
     }
   }
 
@@ -297,9 +300,12 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     result.get("docs").map(_.asInstanceOf[List[Map[String, Any]]]).getOrElse(Nil)
   }
 
-  def findAllByIdsAsList[T](config: ESConfig, ids: Seq[String])(implicit c: ClassTag[T]): List[(String, T)] = {
-    findAllByIds(config, ids).map { doc =>
-      doc("_id").toString -> JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source")))
+  def findAllByIdsAsList[T](config: ESConfig, ids: Seq[String])(implicit c: ClassTag[T]): List[(String, Option[T])] = {
+    findAllByIds(config, ids).collect {
+      case doc if doc.get("found").exists(_ == true) =>
+        doc("_id").toString -> Some(JsonUtils.deserialize[T](JsonUtils.serialize(doc.get("_source"))))
+      case doc =>
+        doc("_id").toString -> None
     }
   }
 
