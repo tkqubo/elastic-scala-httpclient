@@ -125,14 +125,14 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     val mgetResults1 = client.findAllByIdsAsList[Blog](config, ids)
     mgetResults1 foreach {
       case (id, Some(result)) =>
-        assert(result.subject == s"[${id}]Hello World!")
-        assert(result.content == s"${id}This is a mget test!")
+        assert(result.subject == s"[$id]Hello World!")
+        assert(result.content == s"$id This is a mget test!")
     }
     val mgetResults2 = client.findAllByTypeAndIdAsList[Blog](ids.map(id => config -> id))
     mgetResults2 foreach {
       case (id, Some(result)) =>
-        assert(result.subject == s"[${id}]Hello World!")
-        assert(result.content == s"${id}This is a mget test!")
+        assert(result.subject == s"[$id]Hello World!")
+        assert(result.content == s"$id This is a mget test!")
     }
   }
 
