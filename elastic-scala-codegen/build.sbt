@@ -4,21 +4,23 @@ name := "elastic-scala-codegen"
 
 organization := "jp.co.bizreach"
 
-version := "1.0.4"
+version := "1.0.5"
 
-scalaVersion := "2.10.3"
+scalaVersion := "2.10.6"
 
 libraryDependencies ++= Seq(
-  "commons-io" % "commons-io" % "2.4",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.6.1"
+  "commons-io" % "commons-io" % "2.5",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.4"
 )
 
 publishMavenStyle := true
 
-publishTo <<= version { (v: String) =>
+publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  if (version.value.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
 scalacOptions := Seq("-deprecation")

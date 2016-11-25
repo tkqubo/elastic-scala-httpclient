@@ -3,12 +3,27 @@ elastic-scala-httpclient   [![Build Status](https://secure.travis-ci.org/bizreac
 
 Elasticsearch HTTP client for Scala with code generator.
 
+|Client version |Elasticsearch |Scala version |
+|---------------|--------------|--------------|
+|2.0.4          |2.3.5         |2.12          |
+|2.0.3          |2.3.5         |2.11          |
+|2.0.2          |2.3.5         |2.11          |
+|2.0.1          |2.3.5         |2.11          |
+|2.0.0          |2.3.5         |2.11          |
+|1.0.6          |1.7.3         |2.11          |
+|1.0.5          |1.1.0         |2.11          |
+|1.0.4          |1.1.0         |2.11          |
+|1.0.3          |1.1.0         |2.11          |
+|1.0.2          |1.1.0         |2.11          |
+|1.0.1          |1.1.0         |2.11          |
+|1.0.0          |1.1.0         |2.11          |
+
 ## How to use
 
 Add a following dependency into your `build.sbt` at first.
 
 ```scala
-libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "2.0.3"
+libraryDependencies += "jp.co.bizreach" %% "elastic-scala-httpclient" % "2.0.4"
 ```
 
 You can access Elasticsearch via HTTP Rest API as following:
@@ -103,7 +118,7 @@ elastic-scala-codegen can generate source code from Elasticsearch schema json fi
 At first, add following setting into `project/plugins.sbt`:
 
 ```scala
-addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.4")
+addSbtPlugin("jp.co.bizreach" % "elastic-scala-codegen" % "1.0.5")
 ```
 
 Then put Elasticsearch schema json file as `PROJECT_ROOT/schema.json` and execute `sbt es-codegen`. Source code will be generated into `src/main/scala/models`.

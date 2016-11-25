@@ -4,9 +4,10 @@ import org.elasticsearch.action.search.SearchRequestBuilder
 import ESClient._
 import ESUtils._
 import org.slf4j.LoggerFactory
+
 import scala.reflect.ClassTag
 import scala.annotation.tailrec
-import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig}
+import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig, SignatureCalculator}
 
 /**
  * Helper for accessing to Elasticsearch.
@@ -52,8 +53,9 @@ object ESClient {
   /**
    * Initialize AsyncHttpClient with given configuration. ESClient is available by calling this method.
    */
-  def init(config: AsyncHttpClientConfig): Unit = {
+  def init(config: AsyncHttpClientConfig, signatureCalculator: Option[SignatureCalculator] = None): Unit = {
     httpClient = HttpUtils.createHttpClient(config)
+    signatureCalculator.foreach(httpClient.setSignatureCalculator)
   }
 
   /**

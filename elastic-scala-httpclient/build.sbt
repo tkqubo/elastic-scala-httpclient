@@ -2,30 +2,32 @@ name := "elastic-scala-httpclient"
 
 organization := "jp.co.bizreach"
 
-version := "2.0.3"
+version := "2.0.4"
 
-scalaVersion := "2.11.7"
+scalaVersion := "2.12.0"
 
-libraryDependencies <++= scalaVersion(sv => Seq(
-  "jp.co.bizreach"               %  "elasticsearch"         % "2.3.5",
-  "org.slf4j"                    %  "slf4j-api"             % "1.7.7",
-  "joda-time"                    %  "joda-time"             % "2.2",
-  "org.joda"                     %  "joda-convert"          % "1.6",
-  "commons-io"                   %  "commons-io"            % "2.4",
-  "com.ning"                     %  "async-http-client"     % "1.9.38",
-  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.7.2",
+libraryDependencies ++= Seq(
+  "jp.co.bizreach"               %  "elasticsearch"         % "2.3.5.1",
+  "org.slf4j"                    %  "slf4j-api"             % "1.7.21",
+  "joda-time"                    %  "joda-time"             % "2.9.6",
+  "org.joda"                     %  "joda-convert"          % "1.8.1",
+  "commons-io"                   %  "commons-io"            % "2.5",
+  "com.ning"                     %  "async-http-client"     % "1.9.40",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala"  % "2.8.4",
   "org.elasticsearch.plugin"     %  "delete-by-query"       % "2.3.5" % "test",
   "org.elasticsearch.module"     %  "lang-groovy"           % "2.3.5" % "test",
   "org.codelibs"                 %  "elasticsearch-sstmpl"  % "2.3.1" % "test",
-  "org.scalatest"                %% "scalatest"             % "2.2.1" % "test"
-))
+  "org.scalatest"                %% "scalatest"             % "3.0.1" % "test"
+)
 
 publishMavenStyle := true
 
-publishTo <<= version { (v: String) =>
+publishTo := {
   val nexus = "https://oss.sonatype.org/"
-  if (v.trim.endsWith("SNAPSHOT")) Some("snapshots" at nexus + "content/repositories/snapshots")
-  else                             Some("releases"  at nexus + "service/local/staging/deploy/maven2")
+  if (version.value.trim.endsWith("SNAPSHOT"))
+    Some("snapshots" at nexus + "content/repositories/snapshots")
+  else
+    Some("releases"  at nexus + "service/local/staging/deploy/maven2")
 }
 
 scalacOptions := Seq("-deprecation")

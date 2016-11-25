@@ -5,7 +5,7 @@ import org.elasticsearch.action.search.SearchRequestBuilder
 import org.slf4j.LoggerFactory
 import org.elasticsearch.client.support.AbstractClient
 import scala.reflect.ClassTag
-import com.ning.http.client.AsyncHttpClient
+import com.ning.http.client.{AsyncHttpClient, AsyncHttpClientConfig}
 import scala.concurrent._
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -31,6 +31,10 @@ object AsyncESClient {
 
   def init() = {
     httpClient = HttpUtils.createHttpClient()
+  }
+
+  def init(config: AsyncHttpClientConfig) = {
+    httpClient = HttpUtils.createHttpClient(config)
   }
 
   def shutdown() = {
