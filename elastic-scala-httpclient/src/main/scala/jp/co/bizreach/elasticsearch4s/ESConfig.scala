@@ -41,6 +41,12 @@ case class ESConfig(indexName: String, typeName: Option[String] = None, preferen
       (if(u3.indexOf('?') >= 0) "&" else "?") + "timeout=" + x + "ms"
     }.getOrElse("")
   }
+
+  def urlWithParameters(baseUrl: String, parameters: Map[String, String]): String = {
+    val path = parameters.toList.map(param => s"${param._1}=${param._2}").mkString("&")
+
+    urlWithParameters(baseUrl, path)
+  }
 }
 
 object ESConfig {

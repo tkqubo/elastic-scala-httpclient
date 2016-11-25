@@ -200,6 +200,39 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
     insertJsonAsync(config, JsonUtils.serialize(entity))
   }
 
+  def indexExistAsync(config: ESConfig): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    logger.debug(s"index exist request")
+    val future = HttpUtils.headAsync(httpClient, s"${config.url(url)}")
+
+    future
+      .map(_ => Right(Map("result" -> true)))
+      .recover {
+        case HttpResponseException(status, _, _) if status == 404 => Right(Map("result" -> false))
+        case ex: Throwable => Left(Map("error" -> ex))
+      }
+  }
+
+  def createOrUpdateIndexAsync(config: ESConfig, settings: AnyRef): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    val json = JsonUtils.serialize(settings)
+
+    logger.debug(s"create or update an index with settings")
+    val future = HttpUtils.putAsync(httpClient, config.url(url), json)
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
+  def putMappingAsync(config: ESConfig, mapping: AnyRef): Future[Either[Map[String, Any], Map[String, Any]]] = {
+    val json = JsonUtils.serialize(mapping)
+
+    val future = HttpUtils.putAsync(httpClient, s"$url/${config.indexName}/_mapping/${config.typeName.get}", json)
+    future.map { resultJson =>
+      val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
+      map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    }
+  }
+
   def insertAsync(config: ESConfig, id: String, entity: AnyRef):  Future[Either[Map[String, Any], Map[String, Any]]] = {
     insertJsonAsync(config, id, JsonUtils.serialize(entity))
   }
@@ -283,7 +316,7 @@ class AsyncESClient(queryClient: AbstractClient, httpClient: AsyncHttpClient, ur
   }
 
   def refreshAsync(config: ESConfig)(): Future[Either[Map[String, Any], Map[String, Any]]] = {
-    val future = HttpUtils.postAsync(httpClient, s"${url}/${config.indexName}/_refresh", "")
+    val future = HttpUtils.postAsync(httpClient, s"$url/${config.indexName}/_refresh", "")
     future.map { resultJson =>
       val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
       map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
