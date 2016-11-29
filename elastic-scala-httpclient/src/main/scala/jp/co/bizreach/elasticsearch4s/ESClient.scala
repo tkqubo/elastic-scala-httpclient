@@ -97,18 +97,6 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     insertJson(config, id, JsonUtils.serialize(entity))
   }
 
-  def indexExist(config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
-    logger.debug(s"index exist ${config.url(url)}")
-
-    try {
-      HttpUtils.head(httpClient, config.url(url))
-      Right(Map("result" -> true))
-    } catch {
-      case HttpResponseException(status, _, _) if status == 404 => Right(Map("result" -> false))
-      case ex: Throwable => Left(Map("error" -> ex))
-    }
-  }
-
   def putMapping(config: ESConfig, mapping: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
     val json = JsonUtils.serialize(mapping)
 
@@ -126,13 +114,16 @@ class ESClient(httpClient: AsyncHttpClient, url: String,
     map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
   }
 
-  def createOrUpdateIndex(config: ESConfig, settings: AnyRef): Either[Map[String, Any], Map[String, Any]] = {
-    val json = JsonUtils.serialize(settings)
+  def indexExist(config: ESConfig): Either[Map[String, Any], Map[String, Any]] = {
+    logger.debug(s"index exist ${config.url(url)}")
 
-    logger.debug(s"put mapping ${config.indexName}: $json")
-    val resultJson = HttpUtils.put(httpClient, s"${config.url(url)}/${config.indexName}", json)
-    val map = JsonUtils.deserialize[Map[String, Any]](resultJson)
-    map.get("error").map { case message: String => Left(map) }.getOrElse(Right(map))
+    try {
+      HttpUtils.head(httpClient, config.url(url))
+      Right(Map("result" -> true))
+    } catch {
+      case HttpResponseException(status, _, _) if status == 404 => Right(Map("result" -> false))
+      case ex: Throwable => Left(Map("error" -> ex))
+    }
   }
 
   def updateJson(config: ESConfig, id: String, json: String): Either[Map[String, Any], Map[String, Any]] = {

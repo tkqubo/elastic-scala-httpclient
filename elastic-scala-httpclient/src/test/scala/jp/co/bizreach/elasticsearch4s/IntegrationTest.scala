@@ -20,11 +20,13 @@ import org.elasticsearch.script.groovy.GroovyPlugin
 import org.codelibs.elasticsearch.sstmpl.ScriptTemplatePlugin
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
 
 class IntegrationTest extends FunSuite with BeforeAndAfter {
 
   System.setSecurityManager(null) // to enable execution of script
   var node: Node = null
+  val DefaultTimeout = 10.second
 
   /**
    * Extend the Node class to supply plugins on the classpath.
@@ -221,16 +223,52 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     assert(count3 === 99)
   }
 
-<<<<<<< HEAD
   test("index exist"){
-    val config = ESConfig("my_index")
+    val config = ESConfig("my_index_1")
     val client = AsyncESClient("http://localhost:9200")
 
-    for {
+    val f = for {
       _ <- client.createOrUpdateIndexAsync(config, Map())
       res <- client.indexExistAsync(config)
-    } yield {
-      assert(res.isRight)
+    } yield res
+
+    val res = Await.result(f, DefaultTimeout)
+    assert(res.isRight)
+    assert(res.right.get("result").asInstanceOf[Boolean])
+  }
+
+  test("index exist sync"){
+    val config = ESConfig("my_index_2")
+    val client = ESClient("http://localhost:9200")
+
+    client.createOrUpdateIndex(config, Map())
+    val res = client.indexExist(config)
+    assert(res.isRight)
+    assert(res.right.get("result").asInstanceOf[Boolean])
+  }
+
+  test("index not exist sync"){
+    val config = ESConfig("my_not_existing_index")
+    val client = ESClient("http://localhost:9200")
+
+    val res = client.indexExist(config)
+    assert(res.isRight)
+    assert(!res.right.get("result").asInstanceOf[Boolean])
+  }
+
+  test("put mapping"){
+    val config = ESConfig("my_index", "my_type")
+    val client = AsyncESClient("http://localhost:9200")
+    val mapping = Map(
+      "properties" -> Map(
+        "text" -> Map(
+          "type" -> "string",
+          "analyzer" -> "standard"
+        )
+      )
+    )
+    client.putMappingAsync(config, mapping).map { result =>
+      assert(result.isRight)
     }
   }
 
@@ -245,16 +283,8 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
     }
   }
 
-  test("index not exist sync"){
-    val config = ESConfig("my_not_existing_index")
-    val client = ESClient("http://localhost:9200")
-
-    val res = client.indexExist(config)
-    assert(res.isLeft)
-  }
-
   test("create index with settings"){
-    val config = ESConfig("my_index", "my_type")
+    val config = ESConfig("my_index_3")
     val client = AsyncESClient("http://localhost:9200")
     val settings = Map(
       "mappings" -> Map(
@@ -277,53 +307,9 @@ class IntegrationTest extends FunSuite with BeforeAndAfter {
       )
     )
 
-    client.createOrUpdateIndexAsync(config, settings).map { result =>
-=======
-  test("put mapping"){
-    val config = ESConfig("my_index")
-    val client = AsyncESClient("http://localhost:9200")
-    val mapping = Map(
-      "properties" -> Map(
-        "text" -> Map(
-          "type" -> "string",
-          "analyzer" -> "standard"
-        )
-      )
-    )
-    client.putMappingAsync(config, "type_one", mapping, Map("update_all_type" -> "")).map { result =>
->>>>>>> Fix put mapping method to accept parameter and have the correct url
-      assert(result.isRight)
-    }
-  }
-
-  test("create index with settings"){
-    val config = ESConfig("my_index", "my_type")
-    val client = AsyncESClient("http://localhost:9200")
-    val settings = Map(
-      "mappings" -> Map(
-        "type_one" -> Map(
-          "properties" -> Map(
-            "text" -> Map(
-              "type" -> "string",
-              "analyzer" -> "standard"
-            )
-          )
-        ),
-        "type_two" -> Map(
-          "properties" -> Map(
-            "text" -> Map(
-              "type" -> "string",
-              "analyzer" -> "standard"
-            )
-          )
-        )
-      )
-    )
-
-    client.createOrUpdateIndexAsync(config, settings).map { result =>
-      assert(result.isRight)
-    }
-
+    val f =  client.createOrUpdateIndexAsync(config, settings)
+    val res = Await.result(f, DefaultTimeout)
+    assert(res.isRight)
   }
 
   test("Async client"){
